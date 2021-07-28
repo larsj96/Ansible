@@ -1,0 +1,13 @@
+---
+- hosts: all
+  remote_user: template
+  become: yes
+  become_user: root
+
+  tasks:
+    - lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^%sudo'
+        line: '%sudo ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
