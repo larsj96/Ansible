@@ -1,0 +1,85 @@
+---
+- name: Install media stack packages
+  ansible.builtin.apt:
+    name:
+      - nfs-common
+    state: present
+    update_cache: true
+
+- name: Require NFS source when media NFS is enabled
+  ansible.builtin.assert:
+    that:
+      - media_nfs_src | length > 0
+    fail_msg: "Set media_nfs_src before enabling the HP2 SAS media NFS mount."
+  when: media_nfs_enabled | bool
+
+- name: Create media stack directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ media_puid }}"
+    group: "{{ media_pgid }}"
+    mode: "0775"
+  loop:
+    - "{{ media_stack_dir }}"
+    - "{{ media_config_dir }}"
+    - "{{ media_config_dir }}/plex"
+    - "{{ media_config_dir }}/sonarr"
+    - "{{ media_config_dir }}/radarr"
+    - "{{ media_config_dir }}/prowlarr"
+    - "{{ media_config_dir }}/qbittorrent"
+    - "{{ media_config_dir }}/overseerr"
+    - "{{ media_downloads_dir }}"
+
+- name: Ensure media library mount point exists
+  ansible.builtin.file:
+    path: "{{ media_library_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Mount media library from NFS when enabled
+  ansible.posix.mount:
+    path: "{{ media_library_dir }}"
+    src: "{{ media_nfs_src }}"
+    fstype: nfs
+    opts: "{{ media_nfs_opts }}"
+    state: mounted
+  when: media_nfs_enabled | bool
+
+- name: Create media library directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ media_puid }}"
+    group: "{{ media_pgid }}"
+    mode: "0775"
+  loop:
+    - "{{ media_library_dir }}"
+    - "{{ media_movies_dir }}"
+    - "{{ media_tv_dir }}"
+  when: media_create_local_library_dirs | bool or media_nfs_enabled | bool
+
+- name: Install media compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ media_stack_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install media env file
+  ansible.builtin.template:
+    src: media.env.j2
+    dest: "{{ media_stack_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Start media stack
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ media_stack_dir }}"
+  changed_when: true
