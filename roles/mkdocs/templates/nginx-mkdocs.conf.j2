@@ -1,0 +1,15 @@
+server {
+    listen {{ mkdocs_nginx_listen_port }} default_server;
+    listen [::]:{{ mkdocs_nginx_listen_port }} default_server;
+
+    server_name {{ mkdocs_nginx_server_name }};
+    root {{ mkdocs_site_dir }};
+    index index.html;
+
+    access_log /var/log/nginx/mkdocs-access.log;
+    error_log /var/log/nginx/mkdocs-error.log;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
