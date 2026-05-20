@@ -1,0 +1,46 @@
+[agent]
+  interval = "30s"
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "30s"
+  flush_jitter = "5s"
+  precision = ""
+  hostname = "{{ inventory_hostname }}"
+  omit_hostname = false
+
+[[outputs.influxdb_v2]]
+  urls = ["http://influxdb:8086"]
+  token = "$INFLUX_TOKEN"
+  organization = "{{ telegraf_influxdb_org }}"
+  bucket = "{{ telegraf_influxdb_bucket }}"
+
+[[inputs.cpu]]
+  percpu = true
+  totalcpu = true
+
+[[inputs.mem]]
+
+[[inputs.disk]]
+  ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "squashfs"]
+
+[[inputs.diskio]]
+
+[[inputs.net]]
+
+[[inputs.system]]
+
+[[inputs.docker]]
+  endpoint = "unix:///var/run/docker.sock"
+  gather_services = false
+
+[[inputs.ping]]
+  urls = {{ telegraf_ping_targets | to_json }}
+  count = 3
+  method = "native"
+
+[[inputs.x509_cert]]
+  sources = {{ telegraf_x509_targets | to_json }}
+  timeout = "5s"
+  insecure_skip_verify = true
