@@ -9,7 +9,13 @@ server {
     access_log /var/log/nginx/mkdocs-access.log;
     error_log /var/log/nginx/mkdocs-error.log;
 
-    location / {
-        try_files $uri $uri/ /index.html;
+    location ~ ^/docs/(.*)\.md$ {
+        return 301 /$1/;
     }
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+
+    error_page 404 /404.html;
 }
