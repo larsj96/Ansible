@@ -26,6 +26,9 @@
     - "{{ monitoring_stack_dir }}/grafana"
     - "{{ monitoring_stack_dir }}/grafana/provisioning"
     - "{{ monitoring_stack_dir }}/grafana/provisioning/datasources"
+    - "{{ monitoring_stack_dir }}/grafana/provisioning/dashboards"
+    - "{{ monitoring_stack_dir }}/grafana/dashboards"
+    - "{{ monitoring_stack_dir }}/grafana/dashboards/homelab"
     - "{{ monitoring_stack_dir }}/logstash"
     - "{{ monitoring_stack_dir }}/logstash/pipeline"
 
@@ -61,6 +64,25 @@
     group: root
     mode: "0644"
   no_log: true
+
+- name: Install Grafana dashboard provider
+  ansible.builtin.template:
+    src: grafana-dashboard-provider.yml.j2
+    dest: "{{ monitoring_stack_dir }}/grafana/provisioning/dashboards/homelab.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Grafana dashboards
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ monitoring_stack_dir }}/grafana/dashboards/homelab/{{ item | basename | regex_replace('^grafana-dashboard-', '') | regex_replace('\\.j2$', '') }}"
+    owner: root
+    group: root
+    mode: "0644"
+  loop:
+    - grafana-dashboard-homelab-overview.json.j2
+    - grafana-dashboard-network-tls.json.j2
 
 - name: Install monitoring env file
   ansible.builtin.copy:
