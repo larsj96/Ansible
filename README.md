@@ -16,16 +16,12 @@ git clone https://github.com/larsj96/Ansible.git ansible-homelab
 cd ansible-homelab
 ```
 
-Confirm the `mkdocs` VM IP before running. Earlier DHCP scan showed `mkdocs` and `docker1` as `10.0.0.35` / `10.0.0.37`:
+Known DHCP mapping:
 
-```bash
-for host in 10.0.0.35 10.0.0.37; do
-  echo "===== $host ====="
-  ssh ubuntu@$host hostname
-done
+```text
+docker1: 10.0.0.35
+mkdocs: 10.0.0.37
 ```
-
-If needed, edit `inventory/homelab.ini` so `mkdocs ansible_host=` points at the host named `mkdocs`.
 
 Install and publish MkDocs:
 
@@ -36,5 +32,5 @@ ansible-playbook playbooks/mkdocs.yml
 Then test:
 
 ```bash
-curl -I http://10.0.0.35/
+curl -I http://10.0.0.37/
 ```
