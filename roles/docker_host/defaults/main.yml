@@ -1,0 +1,7 @@
+---
+docker_host_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - python3-pip
