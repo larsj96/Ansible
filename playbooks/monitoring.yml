@@ -1,0 +1,13 @@
+---
+- name: Deploy central monitoring stack
+  hosts: monitoring
+  become: true
+  roles:
+    - docker_host
+    - monitoring_stack
+
+- name: Deploy Telegraf agents
+  hosts: telegraf_agents
+  become: true
+  roles:
+    - telegraf_agent
