@@ -1,0 +1,5 @@
+---
+telegraf_influxdb_url: "http://10.0.0.38:8086"
+telegraf_influxdb_org: "lanilsen"
+telegraf_influxdb_bucket: "homelab"
+telegraf_interval: "30s"
