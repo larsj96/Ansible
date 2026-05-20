@@ -17,3 +17,7 @@ telegraf_ping_targets:
   - "1.1.1.1"
 telegraf_x509_targets:
   - "https://docs.lanilsen.com:443"
+
+monitoring_snmp_enabled: false
+monitoring_snmp_community: "{{ snmp_community | default('') }}"
+monitoring_snmp_targets: []
