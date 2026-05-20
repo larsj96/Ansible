@@ -1,0 +1,6 @@
+---
+- name: Install and publish MkDocs
+  hosts: mkdocs
+  become: true
+  roles:
+    - mkdocs
