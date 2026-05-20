@@ -1,0 +1,20 @@
+---
+media_stack_dir: "/opt/media"
+media_timezone: "Europe/Oslo"
+media_puid: "1000"
+media_pgid: "1000"
+
+media_config_dir: "{{ media_stack_dir }}/config"
+media_downloads_dir: "{{ media_stack_dir }}/downloads"
+media_library_dir: "/mnt/media"
+media_movies_dir: "{{ media_library_dir }}/movies"
+media_tv_dir: "{{ media_library_dir }}/tv"
+
+media_create_local_library_dirs: true
+media_nfs_enabled: false
+media_nfs_src: ""
+media_nfs_opts: "rw,nofail,x-systemd.automount,_netdev"
+
+plex_claim: ""
+plex_advertise_url: "http://10.0.0.39:32400"
+qbittorrent_webui_port: 8080
