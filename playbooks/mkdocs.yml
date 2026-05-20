@@ -14,5 +14,8 @@
     mkdocs_python_packages:
       - mkdocs
       - mkdocs-material
+      - mkdocs-git-revision-date-plugin
+      - mkdocs-mermaid2-plugin
+      - pymdown-extensions
   roles:
     - mkdocs
