@@ -1,0 +1,6 @@
+---
+- name: Install Cloudflare Tunnel connector for docs
+  hosts: mkdocs_servers
+  become: true
+  roles:
+    - cloudflared
