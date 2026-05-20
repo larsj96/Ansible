@@ -3,6 +3,7 @@
   hosts: monitoring
   become: true
   vars_files:
+    - ../group_vars/monitoring.yml
     - ../group_vars/monitoring_secrets.yml
   roles:
     - docker_host
