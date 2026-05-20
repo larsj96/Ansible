@@ -23,6 +23,8 @@ docker1: 10.0.0.35
 mkdocs: 10.0.0.37
 ```
 
+MkDocs defaults live in `roles/mkdocs/defaults/main.yml`. Override them with inventory/group vars later when the layout grows.
+
 Install and publish MkDocs:
 
 ```bash
