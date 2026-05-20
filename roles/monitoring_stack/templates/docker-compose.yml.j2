@@ -22,6 +22,8 @@ services:
     container_name: telegraf
     restart: unless-stopped
     user: root
+    group_add:
+      - "{{ monitoring_docker_socket_gid }}"
     depends_on:
       - influxdb
     environment:
