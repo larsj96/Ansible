@@ -1,0 +1,22 @@
+---
+- name: Install Telegraf from InfluxData package
+  ansible.builtin.apt:
+    deb: "{{ telegraf_deb_url }}"
+    state: present
+    update_cache: true
+
+- name: Install Telegraf agent config
+  ansible.builtin.template:
+    src: telegraf.conf.j2
+    dest: /etc/telegraf/telegraf.conf
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+  notify: restart telegraf
+
+- name: Ensure Telegraf is enabled and running
+  ansible.builtin.service:
+    name: telegraf
+    enabled: true
+    state: started
