@@ -21,6 +21,7 @@ services:
     image: telegraf:1.33
     container_name: telegraf
     restart: unless-stopped
+    user: root
     depends_on:
       - influxdb
     environment:
