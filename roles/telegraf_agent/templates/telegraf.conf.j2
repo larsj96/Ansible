@@ -1,0 +1,34 @@
+[agent]
+  interval = "{{ telegraf_interval }}"
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "{{ telegraf_interval }}"
+  flush_jitter = "5s"
+  precision = ""
+  hostname = "{{ inventory_hostname }}"
+  omit_hostname = false
+
+[[outputs.influxdb_v2]]
+  urls = ["{{ telegraf_influxdb_url }}"]
+  token = "{{ influxdb_admin_token }}"
+  organization = "{{ telegraf_influxdb_org }}"
+  bucket = "{{ telegraf_influxdb_bucket }}"
+
+[[inputs.cpu]]
+  percpu = true
+  totalcpu = true
+
+[[inputs.mem]]
+
+[[inputs.disk]]
+  ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "squashfs"]
+
+[[inputs.diskio]]
+
+[[inputs.net]]
+
+[[inputs.system]]
+
+[[inputs.processes]]
