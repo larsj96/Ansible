@@ -1,0 +1,120 @@
+---
+- name: Install MkDocs system dependencies
+  ansible.builtin.apt:
+    name:
+      - git
+      - nginx
+      - python3
+      - python3-pip
+      - python3-venv
+      - rsync
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create MkDocs directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+  loop:
+    - "{{ mkdocs_project_dir }}"
+    - "{{ mkdocs_site_dir }}"
+    - "{{ mkdocs_venv_dir | dirname }}"
+
+- name: Ensure MkDocs site directory is writable before build
+  ansible.builtin.file:
+    path: "{{ mkdocs_site_dir }}"
+    state: directory
+    recurse: true
+    owner: ubuntu
+    group: ubuntu
+    mode: "0755"
+
+- name: Clone docs source
+  ansible.builtin.git:
+    repo: "{{ mkdocs_repo_url }}"
+    dest: "{{ mkdocs_project_dir }}"
+    version: "{{ mkdocs_repo_version }}"
+    force: true
+  become_user: ubuntu
+
+- name: Check whether mkdocs.yml exists
+  ansible.builtin.stat:
+    path: "{{ mkdocs_project_dir }}/mkdocs.yml"
+  register: mkdocs_config
+
+- name: Create minimal mkdocs.yml when repo does not provide one
+  ansible.builtin.copy:
+    dest: "{{ mkdocs_project_dir }}/mkdocs.yml"
+    owner: ubuntu
+    group: ubuntu
+    mode: "0644"
+    content: |
+      site_name: {{ mkdocs_site_name | to_json }}
+      docs_dir: docs
+      theme:
+        name: material
+  when: not mkdocs_config.stat.exists
+
+- name: Create MkDocs Python virtualenv
+  ansible.builtin.command:
+    cmd: "python3 -m venv {{ mkdocs_venv_dir }}"
+    creates: "{{ mkdocs_venv_dir }}/bin/python"
+
+- name: Install MkDocs Python packages
+  ansible.builtin.pip:
+    name: "{{ mkdocs_python_packages }}"
+    virtualenv: "{{ mkdocs_venv_dir }}"
+    virtualenv_command: "python3 -m venv"
+
+- name: Build static MkDocs site
+  ansible.builtin.command:
+    cmd: "{{ mkdocs_venv_dir }}/bin/mkdocs build --clean --site-dir {{ mkdocs_site_dir }}"
+    chdir: "{{ mkdocs_project_dir }}"
+  become_user: ubuntu
+  notify: reload nginx
+
+- name: Ensure site files are readable by nginx
+  ansible.builtin.file:
+    path: "{{ mkdocs_site_dir }}"
+    state: directory
+    recurse: true
+    owner: ubuntu
+    group: www-data
+    mode: "0755"
+
+- name: Install nginx site config
+  ansible.builtin.template:
+    src: nginx-mkdocs.conf.j2
+    dest: /etc/nginx/sites-available/mkdocs.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: reload nginx
+
+- name: Disable default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: reload nginx
+
+- name: Enable MkDocs nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/mkdocs.conf
+    dest: /etc/nginx/sites-enabled/mkdocs.conf
+    state: link
+  notify: reload nginx
+
+- name: Validate nginx config
+  ansible.builtin.command:
+    cmd: nginx -t
+  changed_when: false
+
+- name: Ensure nginx is enabled and running
+  ansible.builtin.service:
+    name: nginx
+    enabled: true
+    state: started
