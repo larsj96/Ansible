@@ -1,0 +1,24 @@
+---
+- name: Install cloudflared package
+  ansible.builtin.apt:
+    deb: "{{ cloudflared_deb_url }}"
+    state: present
+
+- name: Check cloudflared service status
+  ansible.builtin.stat:
+    path: /etc/systemd/system/cloudflared.service
+  register: cloudflared_service
+
+- name: Install cloudflared tunnel service
+  ansible.builtin.command:
+    cmd: "cloudflared service install {{ cloudflared_token }}"
+  when:
+    - not cloudflared_service.stat.exists
+    - cloudflared_token | length > 0
+  no_log: true
+
+- name: Ensure cloudflared is enabled and running
+  ansible.builtin.service:
+    name: cloudflared
+    enabled: true
+    state: started
