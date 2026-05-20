@@ -1,0 +1,90 @@
+services:
+  plex:
+    image: lscr.io/linuxserver/plex:latest
+    container_name: plex
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+      VERSION: "docker"
+      PLEX_CLAIM: "${PLEX_CLAIM}"
+      ADVERTISE_IP: "${PLEX_ADVERTISE_URL}"
+    volumes:
+      - "{{ media_config_dir }}/plex:/config"
+      - "{{ media_movies_dir }}:/movies"
+      - "{{ media_tv_dir }}:/tv"
+
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+    ports:
+      - "8989:8989"
+    volumes:
+      - "{{ media_config_dir }}/sonarr:/config"
+      - "{{ media_tv_dir }}:/tv"
+      - "{{ media_downloads_dir }}:/downloads"
+
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+    ports:
+      - "7878:7878"
+    volumes:
+      - "{{ media_config_dir }}/radarr:/config"
+      - "{{ media_movies_dir }}:/movies"
+      - "{{ media_downloads_dir }}:/downloads"
+
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+    ports:
+      - "9696:9696"
+    volumes:
+      - "{{ media_config_dir }}/prowlarr:/config"
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+      WEBUI_PORT: "${QBITTORRENT_WEBUI_PORT}"
+    ports:
+      - "{{ qbittorrent_webui_port }}:{{ qbittorrent_webui_port }}"
+      - "6881:6881"
+      - "6881:6881/udp"
+    volumes:
+      - "{{ media_config_dir }}/qbittorrent:/config"
+      - "{{ media_downloads_dir }}:/downloads"
+
+  overseerr:
+    image: lscr.io/linuxserver/overseerr:latest
+    container_name: overseerr
+    restart: unless-stopped
+    environment:
+      PUID: "${PUID}"
+      PGID: "${PGID}"
+      TZ: "${TZ}"
+    ports:
+      - "5055:5055"
+    volumes:
+      - "{{ media_config_dir }}/overseerr:/config"
