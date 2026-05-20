@@ -1,0 +1,13 @@
+---
+- name: Deploy media stack
+  hosts: media
+  become: true
+  pre_tasks:
+    - name: Load media secrets when present
+      ansible.builtin.include_vars:
+        file: "{{ playbook_dir }}/../group_vars/media_secrets.yml"
+      ignore_errors: true
+      no_log: true
+  roles:
+    - docker_host
+    - media_stack
