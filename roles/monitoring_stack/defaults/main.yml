@@ -18,6 +18,7 @@ telegraf_ping_targets:
 telegraf_x509_targets:
   - "https://docs.lanilsen.com:443"
 
+monitoring_docker_socket_gid: "112"
 monitoring_snmp_enabled: false
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
 monitoring_snmp_targets: []
