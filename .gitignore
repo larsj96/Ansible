@@ -1,0 +1,4 @@
+group_vars/*_secrets.yml
+group_vars/monitoring_secrets.yml
+*.retry
+.vault-pass
