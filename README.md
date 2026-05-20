@@ -23,7 +23,7 @@ docker1: 10.0.0.35
 mkdocs: 10.0.0.37
 ```
 
-MkDocs defaults live in `roles/mkdocs/defaults/main.yml`. Override them with inventory/group vars later when the layout grows.
+MkDocs variables are set directly in `playbooks/mkdocs.yml` for the first deployment, with the same values also present in `roles/mkdocs/defaults/main.yml` for later reuse.
 
 Install and publish MkDocs:
 
