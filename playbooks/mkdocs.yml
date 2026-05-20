@@ -2,5 +2,17 @@
 - name: Install and publish MkDocs
   hosts: mkdocs_servers
   become: true
+  vars:
+    mkdocs_site_name: "Lanilsen Homelab Docs"
+    mkdocs_repo_url: "https://github.com/larsj96/az-static-web-app-docs.git"
+    mkdocs_repo_version: "main"
+    mkdocs_project_dir: "/srv/mkdocs/source"
+    mkdocs_site_dir: "/srv/mkdocs/site"
+    mkdocs_venv_dir: "/opt/mkdocs/venv"
+    mkdocs_nginx_server_name: "_"
+    mkdocs_nginx_listen_port: 80
+    mkdocs_python_packages:
+      - mkdocs
+      - mkdocs-material
   roles:
     - mkdocs
