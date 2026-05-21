@@ -66,7 +66,6 @@
 {% endfor %}
 {% endif %}
 
-
 {% if monitoring_fortigate_snmp_enabled | bool %}
 {% for target in monitoring_fortigate_snmp_targets %}
 [[inputs.snmp]]
@@ -143,5 +142,53 @@
   [[inputs.snmp.field]]
     name = "session_rate_60m"
     oid = "1.3.6.1.4.1.12356.101.4.1.14.0"
+
+{% for iface in target.interfaces | default(monitoring_fortigate_snmp_interfaces) %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ target.community | default(monitoring_snmp_community) }}"
+  timeout = "5s"
+  retries = 2
+  name = "fortigate_interface"
+
+  [inputs.snmp.tags]
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type }}"
+    if_index = "{{ iface.index }}"
+    if_name = "{{ iface.name }}"
+
+  [[inputs.snmp.field]]
+    name = "oper_status"
+    oid = "1.3.6.1.2.1.2.2.1.8.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "high_speed_mbps"
+    oid = "1.3.6.1.2.1.31.1.1.1.15.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "in_octets"
+    oid = "1.3.6.1.2.1.31.1.1.1.6.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "out_octets"
+    oid = "1.3.6.1.2.1.31.1.1.1.10.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "in_errors"
+    oid = "1.3.6.1.2.1.2.2.1.14.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "out_errors"
+    oid = "1.3.6.1.2.1.2.2.1.20.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "in_discards"
+    oid = "1.3.6.1.2.1.2.2.1.13.{{ iface.index }}"
+
+  [[inputs.snmp.field]]
+    name = "out_discards"
+    oid = "1.3.6.1.2.1.2.2.1.19.{{ iface.index }}"
+{% endfor %}
 {% endfor %}
 {% endif %}
