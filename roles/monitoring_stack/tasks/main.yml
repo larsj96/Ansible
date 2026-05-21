@@ -87,6 +87,7 @@
   loop:
     - grafana-dashboard-homelab-overview.json.j2
     - grafana-dashboard-network-tls.json.j2
+    - grafana-dashboard-ilo-health.json.j2
 
 - name: Install monitoring env file
   ansible.builtin.copy:
