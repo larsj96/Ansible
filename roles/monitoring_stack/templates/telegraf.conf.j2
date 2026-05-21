@@ -61,7 +61,7 @@
 [[inputs.snmp]]
   agents = ["udp://{{ target.address }}:161"]
   version = 2
-  community = "{{ monitoring_snmp_community }}"
+  community = "{{ target.community | default(monitoring_snmp_community) }}"
   timeout = "5s"
   retries = 2
   name = "snmp_device"
@@ -239,7 +239,7 @@
 [[inputs.snmp]]
   agents = ["udp://{{ target.address }}:161"]
   version = 2
-  community = "{{ monitoring_snmp_community }}"
+  community = "{{ target.community | default(monitoring_snmp_community) }}"
   timeout = "5s"
   retries = 2
   name = "fortigate_system"
