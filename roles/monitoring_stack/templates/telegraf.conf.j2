@@ -61,7 +61,7 @@
 [[inputs.snmp]]
   agents = ["udp://{{ target.address }}:161"]
   version = 2
-  community = "{{ target.community | default(monitoring_snmp_community) }}"
+  community = "{{ monitoring_snmp_community }}"
   timeout = "5s"
   retries = 2
   name = "snmp_device"
@@ -78,161 +78,9 @@
   [[inputs.snmp.field]]
     name = "sys_uptime"
     oid = "1.3.6.1.2.1.1.3.0"
-
-{% if target.device_type == "hp-ilo" %}
-  [[inputs.snmp.field]]
-    name = "power_meter_support"
-    oid = "1.3.6.1.4.1.232.6.2.15.1.0"
-
-  [[inputs.snmp.field]]
-    name = "power_meter_status"
-    oid = "1.3.6.1.4.1.232.6.2.15.2.0"
-
-  [[inputs.snmp.field]]
-    name = "power_meter_current_watts"
-    oid = "1.3.6.1.4.1.232.6.2.15.3.0"
-
-  [[inputs.snmp.field]]
-    name = "power_meter_previous_watts"
-    oid = "1.3.6.1.4.1.232.6.2.15.4.0"
-
-  [[inputs.snmp.table]]
-    name = "hp_ilo_temperature"
-    oid = "1.3.6.1.4.1.232.6.2.6.8.1"
-    inherit_tags = ["device", "device_type", "sys_name"]
-    index_as_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "sensor_index"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.2"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "locale"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.3"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "celsius"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.4"
-
-    [[inputs.snmp.table.field]]
-      name = "threshold_celsius"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.5"
-
-    [[inputs.snmp.table.field]]
-      name = "condition"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.6"
-
-    [[inputs.snmp.table.field]]
-      name = "threshold_type"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.7"
-
-    [[inputs.snmp.table.field]]
-      name = "location"
-      oid = "1.3.6.1.4.1.232.6.2.6.8.1.8"
-      is_tag = true
-
-  [[inputs.snmp.table]]
-    name = "hp_ilo_fan"
-    oid = "1.3.6.1.4.1.232.6.2.6.7.1"
-    inherit_tags = ["device", "device_type", "sys_name"]
-    index_as_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "fan_index"
-      oid = "1.3.6.1.4.1.232.6.2.6.7.1.2"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "locale"
-      oid = "1.3.6.1.4.1.232.6.2.6.7.1.3"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "condition"
-      oid = "1.3.6.1.4.1.232.6.2.6.7.1.6"
-
-    [[inputs.snmp.table.field]]
-      name = "present"
-      oid = "1.3.6.1.4.1.232.6.2.6.7.1.9"
-
-  [[inputs.snmp.table]]
-    name = "hp_ilo_power_supply"
-    oid = "1.3.6.1.4.1.232.6.2.9.3.1"
-    inherit_tags = ["device", "device_type", "sys_name"]
-    index_as_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "power_supply_index"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.2"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "condition"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.3"
-
-    [[inputs.snmp.table.field]]
-      name = "status"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.4"
-
-    [[inputs.snmp.table.field]]
-      name = "main_status"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.5"
-
-    [[inputs.snmp.table.field]]
-      name = "used_watts"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.7"
-
-    [[inputs.snmp.table.field]]
-      name = "capacity_watts"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.8"
-
-    [[inputs.snmp.table.field]]
-      name = "model"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.10"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "serial"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.11"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "spare_part"
-      oid = "1.3.6.1.4.1.232.6.2.9.3.1.16"
-      is_tag = true
-
-  [[inputs.snmp.table]]
-    name = "hp_ilo_storage_battery"
-    oid = "1.3.6.1.4.1.232.6.2.17.2.1"
-    inherit_tags = ["device", "device_type", "sys_name"]
-    index_as_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "battery_index"
-      oid = "1.3.6.1.4.1.232.6.2.17.2.1.2"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "condition"
-      oid = "1.3.6.1.4.1.232.6.2.17.2.1.3"
-
-    [[inputs.snmp.table.field]]
-      name = "status"
-      oid = "1.3.6.1.4.1.232.6.2.17.2.1.4"
-
-    [[inputs.snmp.table.field]]
-      name = "charge_percent"
-      oid = "1.3.6.1.4.1.232.6.2.17.2.1.6"
-
-    [[inputs.snmp.table.field]]
-      name = "model"
-      oid = "1.3.6.1.4.1.232.6.2.17.2.1.7"
-      is_tag = true
-{% endif %}
 {% endfor %}
 {% endif %}
+
 
 {% if monitoring_fortigate_snmp_enabled | bool %}
 {% for target in monitoring_fortigate_snmp_targets %}
@@ -260,6 +108,11 @@
   [[inputs.snmp.field]]
     name = "serial"
     oid = "1.3.6.1.4.1.12356.100.1.1.1.0"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "firmware_version"
+    oid = "1.3.6.1.4.1.12356.101.4.1.1.0"
     is_tag = true
 
   [[inputs.snmp.field]]
@@ -305,53 +158,5 @@
   [[inputs.snmp.field]]
     name = "session_rate_60m"
     oid = "1.3.6.1.4.1.12356.101.4.1.14.0"
-
-  [[inputs.snmp.table]]
-    name = "fortigate_interface"
-    oid = "1.3.6.1.2.1.31.1.1.1"
-    inherit_tags = ["device", "device_type", "sys_name", "serial"]
-    index_as_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "if_name"
-      oid = "1.3.6.1.2.1.31.1.1.1.1"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "if_alias"
-      oid = "1.3.6.1.2.1.31.1.1.1.18"
-      is_tag = true
-
-    [[inputs.snmp.table.field]]
-      name = "oper_status"
-      oid = "1.3.6.1.2.1.2.2.1.8"
-
-    [[inputs.snmp.table.field]]
-      name = "high_speed_mbps"
-      oid = "1.3.6.1.2.1.31.1.1.1.15"
-
-    [[inputs.snmp.table.field]]
-      name = "in_octets"
-      oid = "1.3.6.1.2.1.31.1.1.1.6"
-
-    [[inputs.snmp.table.field]]
-      name = "out_octets"
-      oid = "1.3.6.1.2.1.31.1.1.1.10"
-
-    [[inputs.snmp.table.field]]
-      name = "in_errors"
-      oid = "1.3.6.1.2.1.2.2.1.14"
-
-    [[inputs.snmp.table.field]]
-      name = "out_errors"
-      oid = "1.3.6.1.2.1.2.2.1.20"
-
-    [[inputs.snmp.table.field]]
-      name = "in_discards"
-      oid = "1.3.6.1.2.1.2.2.1.13"
-
-    [[inputs.snmp.table.field]]
-      name = "out_discards"
-      oid = "1.3.6.1.2.1.2.2.1.19"
 {% endfor %}
 {% endif %}
