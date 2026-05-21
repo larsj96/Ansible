@@ -28,6 +28,7 @@ services:
       - influxdb
     environment:
       INFLUX_TOKEN: "${INFLUXDB_ADMIN_TOKEN}"
+      PROXMOX_API_TOKEN: "${PROXMOX_API_TOKEN}"
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
