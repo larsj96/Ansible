@@ -1,0 +1,108 @@
+{
+  "uid": "homelab-fortigate-health",
+  "title": "Fortigate Health",
+  "tags": ["homelab", "fortigate", "snmp", "influxdb"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"device\", predicate: (r) => r._measurement == \"fortigate_system\")",
+        "refresh": 1,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "All" }
+      },
+      {
+        "name": "interface",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"if_name\", predicate: (r) => r._measurement == \"fortigate_interface\")",
+        "refresh": 1,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "All" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"cpu_percent\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    },
+    {
+      "id": 2,
+      "title": "Memory",
+      "type": "timeseries",
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and (r._field == \"memory_percent\" or r._field == \"lowmem_percent\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    },
+    {
+      "id": 3,
+      "title": "Active sessions",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"sessions\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    },
+    {
+      "id": 4,
+      "title": "Session setup rate",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 7, "w": 12, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and (r._field == \"session_rate_1m\" or r._field == \"session_rate_10m\" or r._field == \"session_rate_30m\" or r._field == \"session_rate_60m\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    },
+    {
+      "id": 5,
+      "title": "Disk usage",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 7, "w": 6, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "background", "graphMode": "area", "justifyMode": "auto" },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "usage = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"disk_usage_mb\")\ncapacity = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"disk_capacity_mb\")\njoin(tables: {usage: usage, capacity: capacity}, on: [\"_time\", \"device\"]) |> map(fn: (r) => ({ r with _value: float(v: r._value_usage) / float(v: r._value_capacity) * 100.0 })) |> last()" }]
+    },
+    {
+      "id": 6,
+      "title": "Collection freshness",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 7, "w": 6, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0 }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "background", "graphMode": "none", "justifyMode": "auto" },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"sys_uptime\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> map(fn: (r) => ({ r with _value: float(v: uint(v: now()) - uint(v: r._time)) / 1000000000.0, _field: r.device }))" }]
+    },
+    {
+      "id": 7,
+      "title": "Interface throughput",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "Bps", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_interface\" and (r._field == \"in_octets\" or r._field == \"out_octets\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> filter(fn: (r) => \"${interface}\" == \"All\" or r.if_name == \"${interface}\") |> derivative(unit: 1s, nonNegative: true) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    },
+    {
+      "id": 8,
+      "title": "Interface errors and discards",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 7 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_interface\" and (r._field == \"in_errors\" or r._field == \"out_errors\" or r._field == \"in_discards\" or r._field == \"out_discards\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> filter(fn: (r) => \"${interface}\" == \"All\" or r.if_name == \"${interface}\") |> derivative(unit: 1s, nonNegative: true) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+    }
+  ]
+}
