@@ -4,7 +4,7 @@
   "tags": ["homelab", "fortigate", "snmp", "influxdb"],
   "timezone": "browser",
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "refresh": "30s",
   "time": { "from": "now-6h", "to": "now" },
   "templating": {
@@ -14,15 +14,6 @@
         "type": "query",
         "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
         "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"device\", predicate: (r) => r._measurement == \"fortigate_system\")",
-        "refresh": 1,
-        "includeAll": true,
-        "current": { "selected": true, "text": "All", "value": "All" }
-      },
-      {
-        "name": "interface",
-        "type": "query",
-        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"if_name\", predicate: (r) => r._measurement == \"fortigate_interface\")",
         "refresh": 1,
         "includeAll": true,
         "current": { "selected": true, "text": "All", "value": "All" }
@@ -68,13 +59,13 @@
     },
     {
       "id": 5,
-      "title": "Disk usage",
+      "title": "Disk used",
       "type": "stat",
       "gridPos": { "x": 12, "y": 7, "w": 6, "h": 7 },
       "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
       "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
       "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "background", "graphMode": "area", "justifyMode": "auto" },
-      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "usage = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"disk_usage_mb\")\ncapacity = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"disk_capacity_mb\")\njoin(tables: {usage: usage, capacity: capacity}, on: [\"_time\", \"device\"]) |> map(fn: (r) => ({ r with _value: float(v: r._value_usage) / float(v: r._value_capacity) * 100.0 })) |> last()" }]
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and (r._field == \"disk_usage_mb\" or r._field == \"disk_capacity_mb\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> pivot(rowKey: [\"device\"], columnKey: [\"_field\"], valueColumn: \"_value\") |> map(fn: (r) => ({ r with _value: float(v: r.disk_usage_mb) / float(v: r.disk_capacity_mb) * 100.0, _field: r.device }))" }]
     },
     {
       "id": 6,
@@ -88,21 +79,32 @@
     },
     {
       "id": 7,
-      "title": "Interface throughput",
+      "title": "Disk used / capacity",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 14, "w": 24, "h": 8 },
+      "gridPos": { "x": 0, "y": 14, "w": 12, "h": 8 },
       "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "Bps", "min": 0 }, "overrides": [] },
-      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_interface\" and (r._field == \"in_octets\" or r._field == \"out_octets\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> filter(fn: (r) => \"${interface}\" == \"All\" or r.if_name == \"${interface}\") |> derivative(unit: 1s, nonNegative: true) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+      "fieldConfig": { "defaults": { "unit": "decbytes", "min": 0 }, "overrides": [] },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and (r._field == \"disk_usage_mb\" or r._field == \"disk_capacity_mb\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> map(fn: (r) => ({ r with _value: float(v: r._value) * 1000000.0 })) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
     },
     {
       "id": 8,
-      "title": "Interface errors and discards",
-      "type": "timeseries",
-      "gridPos": { "x": 0, "y": 22, "w": 24, "h": 7 },
+      "title": "Memory capacity",
+      "type": "stat",
+      "gridPos": { "x": 12, "y": 14, "w": 6, "h": 8 },
       "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
-      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_interface\" and (r._field == \"in_errors\" or r._field == \"out_errors\" or r._field == \"in_discards\" or r._field == \"out_discards\")) |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> filter(fn: (r) => \"${interface}\" == \"All\" or r.if_name == \"${interface}\") |> derivative(unit: 1s, nonNegative: true) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)" }]
+      "fieldConfig": { "defaults": { "unit": "deckbytes", "min": 0 }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"memory_capacity_kb\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> map(fn: (r) => ({ r with _value: float(v: r._value) * 1000.0, _field: r.device }))" }]
+    },
+    {
+      "id": 9,
+      "title": "SNMP interface counters",
+      "type": "stat",
+      "gridPos": { "x": 18, "y": 14, "w": 6, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto" },
+      "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "import \"influxdata/influxdb/schema\"\nschema.measurements(bucket: \"homelab\") |> filter(fn: (r) => r._value == \"fortigate_interface\") |> count()" }]
     }
   ]
 }
