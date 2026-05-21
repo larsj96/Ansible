@@ -48,19 +48,17 @@ monitoring_proxmox_targets:
 monitoring_snmp_enabled: true
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
 # Enable only targets that are intentionally configured today. hp3 iLO is
-# confirmed working; iDRAC, hp1/hp2 iLO, and Fortigate SNMP are deferred.
+# confirmed working; iDRAC and hp1/hp2 iLO are deferred.
 monitoring_snmp_targets:
   - name: "ilo-hp3"
     address: "10.0.124.163"
     device_type: "hp-ilo"
 
-# Fortigate SNMP is wired but intentionally disabled until the Fortigate
-# responds to polling from monitoring1 (10.0.0.38) on UDP/161.
-monitoring_fortigate_snmp_enabled: false
+monitoring_fortigate_snmp_enabled: true
 monitoring_fortigate_snmp_targets:
   - name: "fortigate-services"
     address: "10.0.0.33"
     device_type: "fortigate"
-  - name: "fortigate-proxmox-mgmt"
-    address: "10.0.0.161"
-    device_type: "fortigate"
+    community: "devops"
+  # 10.0.0.161 is intentionally deferred until that Fortigate interface
+  # answers SNMP from monitoring1 (10.0.0.38).
