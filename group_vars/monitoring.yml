@@ -53,3 +53,14 @@ monitoring_snmp_targets:
   - name: "ilo-hp3"
     address: "10.0.124.163"
     device_type: "hp-ilo"
+
+# Fortigate SNMP is wired but intentionally disabled until the Fortigate
+# responds to polling from monitoring1 (10.0.0.38) on UDP/161.
+monitoring_fortigate_snmp_enabled: false
+monitoring_fortigate_snmp_targets:
+  - name: "fortigate-services"
+    address: "10.0.0.33"
+    device_type: "fortigate"
+  - name: "fortigate-proxmox-mgmt"
+    address: "10.0.0.161"
+    device_type: "fortigate"
