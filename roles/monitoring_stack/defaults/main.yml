@@ -27,3 +27,4 @@ monitoring_snmp_community: "{{ snmp_community | default('') }}"
 monitoring_snmp_targets: []
 monitoring_fortigate_snmp_enabled: false
 monitoring_fortigate_snmp_targets: []
+monitoring_fortigate_snmp_interfaces: []
