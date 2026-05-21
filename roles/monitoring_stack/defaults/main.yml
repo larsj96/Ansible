@@ -19,6 +19,9 @@ telegraf_x509_targets:
   - "https://docs.lanilsen.com:443"
 
 monitoring_docker_socket_gid: "112"
+monitoring_proxmox_enabled: false
+monitoring_proxmox_api_token: "{{ proxmox_api_token | default('') }}"
+monitoring_proxmox_targets: []
 monitoring_snmp_enabled: false
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
 monitoring_snmp_targets: []
