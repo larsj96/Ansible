@@ -1,0 +1,121 @@
+{
+  "uid": "homelab-ilo-health",
+  "title": "iLO Health",
+  "tags": ["homelab", "ilo", "snmp", "influxdb"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-24h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "device",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"device\", predicate: (r) => r._measurement == \"snmp_device\")",
+        "refresh": 1,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "All" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Discovered iLO devices",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 0, "w": 6, "h": 5 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_uptime\") |> last() |> group() |> count(column: \"_value\")"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latest device names",
+      "type": "table",
+      "gridPos": { "x": 6, "y": 0, "w": 18, "h": 5 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": {}, "overrides": [] },
+      "options": { "showHeader": true, "cellHeight": "sm", "footer": { "show": false, "reducer": ["sum"], "countRows": false, "fields": "" } },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_name\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> keep(columns: [\"_time\", \"device\", \"device_type\", \"_value\"]) |> rename(columns: {_value: \"sys_name\"})"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "iLO uptime",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 5, "w": 24, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "d", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_uptime\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _value: float(v: r._value) / 8640000.0, _field: r.device }))"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 4,
+      "title": "Current uptime",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 13, "w": 8, "h": 6 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "d", "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "red", "value": null }, { "color": "orange", "value": 1 }, { "color": "green", "value": 7 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "background", "graphMode": "area", "justifyMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_uptime\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> map(fn: (r) => ({ r with _value: float(v: r._value) / 8640000.0, _field: r.device }))"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "SNMP collection freshness",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 13, "w": 8, "h": 6 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "s", "min": 0, "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "orange", "value": 120 }, { "color": "red", "value": 300 } ] } }, "overrides": [] },
+      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "background", "graphMode": "none", "justifyMode": "auto" },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_uptime\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> map(fn: (r) => ({ r with _value: float(v: uint(v: now()) - uint(v: r._time)) / 1000000000.0, _field: r.device }))"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Raw SNMP uptime ticks",
+      "type": "timeseries",
+      "gridPos": { "x": 16, "y": 13, "w": 8, "h": 6 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"snmp_device\" and r._field == \"sys_uptime\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.device }))"
+        }
+      ],
+      "options": {}
+    }
+  ]
+}
