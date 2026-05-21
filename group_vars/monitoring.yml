@@ -30,13 +30,10 @@ telegraf_ping_targets:
   - "10.0.124.165"
   - "1.1.1.1"
 
+# Keep certificate checks quiet until the remaining iLO/iDRAC SSL issues
+# and Proxmox firewall access are cleaned up.
 telegraf_x509_targets:
   - "https://docs.lanilsen.com:443"
-  - "https://10.0.0.162:8006"
-  - "https://10.0.124.162:443"
-  - "https://10.0.124.163:443"
-  - "https://10.0.124.164:443"
-  - "https://10.0.124.165:443"
 
 monitoring_proxmox_enabled: true
 monitoring_proxmox_api_token: "{{ proxmox_api_token | default('') }}"
@@ -50,22 +47,9 @@ monitoring_proxmox_targets:
 
 monitoring_snmp_enabled: true
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
+# Enable only targets that are intentionally configured today. hp3 iLO is
+# confirmed working; iDRAC, hp1/hp2 iLO, and Fortigate SNMP are deferred.
 monitoring_snmp_targets:
-  - name: "idrac-r820"
-    address: "10.0.124.162"
-    device_type: "dell-idrac"
   - name: "ilo-hp3"
     address: "10.0.124.163"
     device_type: "hp-ilo"
-  - name: "ilo-hp1"
-    address: "10.0.124.164"
-    device_type: "hp-ilo"
-  - name: "ilo-hp2"
-    address: "10.0.124.165"
-    device_type: "hp-ilo"
-  - name: "fortigate-services"
-    address: "10.0.0.33"
-    device_type: "fortigate"
-  - name: "fortigate-proxmox-mgmt"
-    address: "10.0.0.161"
-    device_type: "fortigate"
