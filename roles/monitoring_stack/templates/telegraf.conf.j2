@@ -45,6 +45,17 @@
   timeout = "5s"
   insecure_skip_verify = true
 
+{% if monitoring_proxmox_enabled | bool %}
+{% for target in monitoring_proxmox_targets %}
+[[inputs.proxmox]]
+  base_url = "{{ target.base_url }}"
+  api_token = "$PROXMOX_API_TOKEN"
+  node_name = "{{ target.name }}"
+  insecure_skip_verify = true
+  response_timeout = "10s"
+{% endfor %}
+{% endif %}
+
 {% if monitoring_snmp_enabled | bool %}
 {% for target in monitoring_snmp_targets %}
 [[inputs.snmp]]
