@@ -92,7 +92,7 @@
       "type": "stat",
       "gridPos": { "x": 12, "y": 14, "w": 6, "h": 8 },
       "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "deckbytes", "min": 0 }, "overrides": [] },
+      "fieldConfig": { "defaults": { "unit": "decbytes", "min": 0 }, "overrides": [] },
       "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" },
       "targets": [{ "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb-homelab" }, "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"fortigate_system\" and r._field == \"memory_capacity_kb\") |> filter(fn: (r) => \"${device}\" == \"All\" or r.device == \"${device}\") |> last() |> map(fn: (r) => ({ r with _value: float(v: r._value) * 1000.0, _field: r.device }))" }]
     },
