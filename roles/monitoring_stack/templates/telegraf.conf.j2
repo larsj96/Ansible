@@ -16,21 +16,6 @@
   organization = "{{ telegraf_influxdb_org }}"
   bucket = "{{ telegraf_influxdb_bucket }}"
 
-[[inputs.cpu]]
-  percpu = true
-  totalcpu = true
-
-[[inputs.mem]]
-
-[[inputs.disk]]
-  ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "squashfs"]
-
-[[inputs.diskio]]
-
-[[inputs.net]]
-
-[[inputs.system]]
-
 [[inputs.docker]]
   endpoint = "unix:///var/run/docker.sock"
   gather_services = false
