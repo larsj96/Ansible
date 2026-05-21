@@ -28,3 +28,7 @@ monitoring_snmp_targets: []
 monitoring_fortigate_snmp_enabled: false
 monitoring_fortigate_snmp_targets: []
 monitoring_fortigate_snmp_interfaces: []
+monitoring_ilo_temperature_sensors: []
+monitoring_ilo_fans: []
+monitoring_ilo_power_supplies: []
+monitoring_ilo_storage_batteries: []

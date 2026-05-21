@@ -54,6 +54,59 @@ monitoring_snmp_targets:
     address: "10.0.124.163"
     device_type: "hp-ilo"
 
+monitoring_ilo_temperature_sensors:
+  - { index: 1, location: "ambient" }
+  - { index: 2, location: "cpu-zone" }
+  - { index: 3, location: "cpu-zone" }
+  - { index: 4, location: "memory-zone" }
+  - { index: 5, location: "memory-zone" }
+  - { index: 6, location: "memory-zone" }
+  - { index: 7, location: "memory-zone" }
+  - { index: 8, location: "system-board" }
+  - { index: 10, location: "system-board" }
+  - { index: 11, location: "power-zone" }
+  - { index: 12, location: "power-zone" }
+  - { index: 13, location: "system-board" }
+  - { index: 14, location: "system-board" }
+  - { index: 15, location: "system-board" }
+  - { index: 16, location: "system-board" }
+  - { index: 17, location: "system-board" }
+  - { index: 18, location: "system-board" }
+  - { index: 19, location: "power-zone" }
+  - { index: 20, location: "power-zone" }
+  - { index: 23, location: "disk-backplane" }
+  - { index: 27, location: "disk-backplane" }
+  - { index: 29, location: "system-board" }
+  - { index: 30, location: "ambient" }
+  - { index: 31, location: "disk-backplane" }
+  - { index: 32, location: "disk-backplane" }
+  - { index: 33, location: "disk-backplane" }
+  - { index: 34, location: "disk-backplane" }
+  - { index: 35, location: "disk-backplane" }
+  - { index: 36, location: "disk-backplane" }
+  - { index: 37, location: "disk-backplane" }
+  - { index: 38, location: "system-board" }
+  - { index: 39, location: "system-board" }
+  - { index: 40, location: "system-board" }
+  - { index: 41, location: "system-board" }
+  - { index: 43, location: "system-board" }
+  - { index: 44, location: "power-zone" }
+
+monitoring_ilo_fans:
+  - { index: 1, locale: "fan-1" }
+  - { index: 2, locale: "fan-2" }
+  - { index: 3, locale: "fan-3" }
+  - { index: 4, locale: "fan-4" }
+  - { index: 5, locale: "fan-5" }
+  - { index: 6, locale: "fan-6" }
+
+monitoring_ilo_power_supplies:
+  - { index: 1 }
+  - { index: 2 }
+
+monitoring_ilo_storage_batteries:
+  - { index: 1 }
+
 monitoring_fortigate_snmp_enabled: true
 monitoring_fortigate_snmp_targets:
   - name: "fortigate-services"

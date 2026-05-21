@@ -63,6 +63,188 @@
   [[inputs.snmp.field]]
     name = "sys_uptime"
     oid = "1.3.6.1.2.1.1.3.0"
+
+{% if target.device_type == "hp-ilo" %}
+  [[inputs.snmp.field]]
+    name = "thermal_condition"
+    oid = "1.3.6.1.4.1.232.6.2.6.4.0"
+
+  [[inputs.snmp.field]]
+    name = "power_condition"
+    oid = "1.3.6.1.4.1.232.6.2.9.1.0"
+
+  [[inputs.snmp.field]]
+    name = "power_redundancy_status"
+    oid = "1.3.6.1.4.1.232.6.2.9.2.0"
+
+  [[inputs.snmp.field]]
+    name = "power_meter_current_watts"
+    oid = "1.3.6.1.4.1.232.6.2.15.3.0"
+
+  [[inputs.snmp.field]]
+    name = "power_meter_previous_watts"
+    oid = "1.3.6.1.4.1.232.6.2.15.4.0"
+
+  [[inputs.snmp.field]]
+    name = "storage_battery_condition"
+    oid = "1.3.6.1.4.1.232.6.2.17.1.0"
+
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if monitoring_snmp_enabled | bool %}
+{% for target in monitoring_snmp_targets %}
+{% if target.device_type == "hp-ilo" %}
+{% for sensor in monitoring_ilo_temperature_sensors %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ monitoring_snmp_community }}"
+  timeout = "5s"
+  retries = 2
+  name = "hp_ilo_temperature"
+
+  [inputs.snmp.tags]
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type }}"
+    sensor_index = "{{ sensor.index }}"
+    location = "{{ sensor.location | default('location-' ~ sensor.index) }}"
+
+  [[inputs.snmp.field]]
+    name = "celsius"
+    oid = "1.3.6.1.4.1.232.6.2.6.8.1.4.0.{{ sensor.index }}"
+
+  [[inputs.snmp.field]]
+    name = "threshold_celsius"
+    oid = "1.3.6.1.4.1.232.6.2.6.8.1.5.0.{{ sensor.index }}"
+
+  [[inputs.snmp.field]]
+    name = "condition"
+    oid = "1.3.6.1.4.1.232.6.2.6.8.1.6.0.{{ sensor.index }}"
+{% endfor %}
+
+{% for fan in monitoring_ilo_fans %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ monitoring_snmp_community }}"
+  timeout = "5s"
+  retries = 2
+  name = "hp_ilo_fan"
+
+  [inputs.snmp.tags]
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type }}"
+    fan_index = "{{ fan.index }}"
+    locale = "{{ fan.locale | default('fan-' ~ fan.index) }}"
+
+  [[inputs.snmp.field]]
+    name = "present"
+    oid = "1.3.6.1.4.1.232.6.2.6.7.1.9.0.{{ fan.index }}"
+
+  [[inputs.snmp.field]]
+    name = "condition"
+    oid = "1.3.6.1.4.1.232.6.2.6.7.1.10.0.{{ fan.index }}"
+{% endfor %}
+
+{% for psu in monitoring_ilo_power_supplies %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ monitoring_snmp_community }}"
+  timeout = "5s"
+  retries = 2
+  name = "hp_ilo_power_supply"
+
+  [inputs.snmp.tags]
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type }}"
+    power_supply_index = "{{ psu.index }}"
+
+  [[inputs.snmp.field]]
+    name = "model"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.10.0.{{ psu.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "serial"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.11.0.{{ psu.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "spare_part"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.16.0.{{ psu.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "condition"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.3.0.{{ psu.index }}"
+
+  [[inputs.snmp.field]]
+    name = "status"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.4.0.{{ psu.index }}"
+
+  [[inputs.snmp.field]]
+    name = "input_status"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.5.0.{{ psu.index }}"
+
+  [[inputs.snmp.field]]
+    name = "used_watts"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.7.0.{{ psu.index }}"
+
+  [[inputs.snmp.field]]
+    name = "capacity_watts"
+    oid = "1.3.6.1.4.1.232.6.2.9.3.1.8.0.{{ psu.index }}"
+{% endfor %}
+
+{% for battery in monitoring_ilo_storage_batteries %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ monitoring_snmp_community }}"
+  timeout = "5s"
+  retries = 2
+  name = "hp_ilo_storage_battery"
+
+  [inputs.snmp.tags]
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type }}"
+    battery_index = "{{ battery.index }}"
+
+  [[inputs.snmp.field]]
+    name = "model"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.7.0.{{ battery.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "part_number"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.8.0.{{ battery.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "serial"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.9.0.{{ battery.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "spare_part"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.11.0.{{ battery.index }}"
+    is_tag = true
+
+  [[inputs.snmp.field]]
+    name = "condition"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.3.0.{{ battery.index }}"
+
+  [[inputs.snmp.field]]
+    name = "status"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.4.0.{{ battery.index }}"
+
+  [[inputs.snmp.field]]
+    name = "charge_percent"
+    oid = "1.3.6.1.4.1.232.6.2.17.2.1.6.0.{{ battery.index }}"
+{% endfor %}
+{% endif %}
 {% endfor %}
 {% endif %}
 
