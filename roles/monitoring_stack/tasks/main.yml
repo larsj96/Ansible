@@ -108,3 +108,9 @@
     cmd: docker compose up -d
     chdir: "{{ monitoring_stack_dir }}"
   changed_when: true
+
+- name: Restart Grafana and Telegraf after provisioning changes
+  ansible.builtin.command:
+    cmd: docker compose restart grafana telegraf
+    chdir: "{{ monitoring_stack_dir }}"
+  changed_when: true
