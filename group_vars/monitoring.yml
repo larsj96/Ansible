@@ -48,7 +48,7 @@ monitoring_proxmox_targets:
   - name: "hp3"
     base_url: "https://10.0.0.164:8006/api2/json"
 
-monitoring_snmp_enabled: false
+monitoring_snmp_enabled: true
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
 monitoring_snmp_targets:
   - name: "idrac-r820"
