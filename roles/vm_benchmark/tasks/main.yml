@@ -72,23 +72,36 @@
     mode: "0644"
     content: "{{ benchmark_memory.stdout }}\n"
 
+- name: Stop existing iperf3 server
+  ansible.builtin.command:
+    argv:
+      - pkill
+      - -x
+      - iperf3
+  delegate_to: "{{ benchmark_iperf_server }}"
+  become: true
+  run_once: true
+  changed_when: true
+  failed_when: false
+  when:
+    - benchmark_iperf_enabled | bool
+    - benchmark_iperf_server | length > 0
+
 - name: Start iperf3 server
   ansible.builtin.command:
     argv:
       - iperf3
       - --server
       - --daemon
-      - --one-off
       - --port
       - "{{ benchmark_iperf_port }}"
   delegate_to: "{{ benchmark_iperf_server }}"
   become: true
-  run_once: false
+  run_once: true
   changed_when: true
   when:
     - benchmark_iperf_enabled | bool
     - benchmark_iperf_server | length > 0
-    - inventory_hostname != benchmark_iperf_server
 
 - name: Run iperf3 network benchmark
   ansible.builtin.command:
@@ -120,6 +133,21 @@
   when:
     - benchmark_iperf is defined
     - benchmark_iperf.stdout is defined
+
+- name: Stop iperf3 server
+  ansible.builtin.command:
+    argv:
+      - pkill
+      - -x
+      - iperf3
+  delegate_to: "{{ benchmark_iperf_server }}"
+  become: true
+  run_once: true
+  changed_when: true
+  failed_when: false
+  when:
+    - benchmark_iperf_enabled | bool
+    - benchmark_iperf_server | length > 0
 
 - name: Run fio disk profiles
   ansible.builtin.command:
