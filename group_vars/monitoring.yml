@@ -1,6 +1,8 @@
 ---
 monitoring_stack_dir: "/opt/monitoring"
 monitoring_timezone: "Europe/Oslo"
+log_shipper_logstash_hosts:
+  - "10.0.0.38:5044"
 
 influxdb_username: "admin"
 influxdb_org: "lanilsen"
@@ -49,6 +51,12 @@ monitoring_proxmox_targets:
 
 monitoring_snmp_enabled: true
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
+# Cloudflare metrics (Prometheus exporter + Telegraf scrape)
+monitoring_cloudflare_enabled: false
+monitoring_cloudflare_api_token: "{{ cloudflare_api_token | default('') }}"
+monitoring_cloudflare_accounts: []
+monitoring_cloudflare_zones: []
+monitoring_cloudflare_excluded_zones: []
 # Enable only targets that are intentionally configured today. HP iLO
 # devices use the shared monitoring_snmp_community secret.
 # hp1 / 10.0.124.164 currently times out on UDP/161 and should be enabled
@@ -171,7 +179,7 @@ monitoring_fortigate_snmp_interfaces:
 monitoring_paloalto_snmp_enabled: true
 monitoring_paloalto_snmp_targets:
   - name: "pa510-homelab-ljn"
-    address: "10.1.1.65"
+    address: "10.1.1.3"
     device_type: "palo-alto"
     community: "{{ monitoring_snmp_community }}"
     interface_indexes: "{{ range(1, 31) | list }}"

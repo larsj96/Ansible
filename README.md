@@ -77,6 +77,7 @@ That file contains the unseal keys and initial root token. Copy the unseal keys 
 - Chronograf and Kapacitor for the TICK-style workflow.
 - Grafana as the primary dashboard UI.
 - OpenSearch, OpenSearch Dashboards, and Logstash for syslog/audit/application logs.
+- Filebeat shipping from Linux hosts into Logstash for centralized log/audit data.
 
 Create secrets before the first deploy:
 
@@ -84,6 +85,8 @@ Create secrets before the first deploy:
 cp group_vars/monitoring_secrets.yml.example group_vars/monitoring_secrets.yml
 ansible-vault encrypt group_vars/monitoring_secrets.yml
 ```
+
+Generated monitoring passwords/tokens should remain in Vault and can be mirrored into Vaultwarden for break-glass recovery.
 
 Deploy from bastion:
 
@@ -95,9 +98,35 @@ When Terraform creates a new Ubuntu VM, add it to `[telegraf_agents]` in `invent
 
 HP iLO SNMP polling is enabled for `ilo-hp2` (`10.0.124.165`) and `ilo-hp3` (`10.0.124.163`) through `monitoring_snmp_targets`. `ilo-hp1` (`10.0.124.164`) is documented as pending because it currently times out on UDP/161.
 
-Palo Alto SNMP polling is enabled against the in-band interface `10.1.1.65`, because the dedicated management address does not answer SNMP from `monitoring1` today. Credentials belong in the vaulted monitoring secrets file.
+Palo Alto SNMP polling is enabled against `10.1.1.3`. SNMP was explicitly enabled on the Palo management-plane service on `2026-05-22`; credentials belong in the vaulted monitoring secrets file.
 
 Proxmox metrics are collected centrally with Telegraf's Proxmox API input for `hp1`, `hp2`, `hp3`, and `dell1`. The Grafana dashboard is provisioned from `roles/monitoring_stack/templates/grafana-dashboard-proxmox-ve.json.j2`.
+
+Cloudflare metrics can be enabled in the same stack by setting:
+
+- `monitoring_cloudflare_enabled: true` in `group_vars/monitoring.yml`
+- `cloudflare_api_token` in `group_vars/monitoring_secrets.yml` (Vault-backed)
+
+When enabled, Ansible starts a Cloudflare exporter container (`ghcr.io/lablabs/cloudflare_exporter`) and scrapes Prometheus metrics from it into InfluxDB through Telegraf.
+
+- The exporter auth uses Cloudflare API token with:
+  - `Zone > Analytics:Read` (required)
+  - `Account > Account Analytics:Read` (if account metrics are collected)
+  - Optional: zone/firewall/load-balancer/etc. reads per the integration if those dashboards are used
+- Optional filters are provided in vars as `monitoring_cloudflare_accounts` and `monitoring_cloudflare_zones` (zone/account ID lists).
+
+A dedicated dashboard is provisioned as `roles/monitoring_stack/templates/grafana-dashboard-cloudflare.json.j2` when the feature is enabled.
+
+Alternative options:
+
+- Use the Cloudflare Prometheus integration (Cloudflare Prometheus Exporter, GraphQL + REST API backed) and keep your own dashboards.
+- Use the Grafana Cloudflare data source plugin (public preview, not part of Grafana OSS by default).
+
+References:
+
+- https://developers.cloudflare.com/analytics/analytics-integrations/prometheus/
+- https://github.com/lablabs/cloudflare-exporter
+- https://developers.cloudflare.com/fundamentals/api/reference/permissions/
 
 ## Management Workbench
 

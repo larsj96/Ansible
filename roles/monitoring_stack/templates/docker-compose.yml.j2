@@ -26,14 +26,38 @@ services:
       - "{{ monitoring_docker_socket_gid }}"
     depends_on:
       - influxdb
+{% if monitoring_cloudflare_enabled %}
+      - cloudflare-exporter
+{% endif %}
     environment:
       INFLUX_TOKEN: "${INFLUXDB_ADMIN_TOKEN}"
       PROXMOX_API_TOKEN: "${PROXMOX_API_TOKEN}"
+      SNMP_V3_AUTH_PASSWORD: "${SNMP_V3_AUTH_PASSWORD}"
+      SNMP_V3_PRIV_PASSWORD: "${SNMP_V3_PRIV_PASSWORD}"
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
     cap_add:
       - NET_RAW
+
+{% if monitoring_cloudflare_enabled %}
+  cloudflare-exporter:
+    image: "{{ monitoring_cloudflare_container_image }}"
+    container_name: cloudflare-exporter
+    restart: unless-stopped
+    environment:
+      CF_API_TOKEN: "${CLOUDFLARE_API_TOKEN}"
+      CF_ACCOUNTS: "${CLOUDFLARE_ACCOUNTS}"
+      CF_ZONES: "${CLOUDFLARE_ZONES}"
+      CF_EXCLUDE_ZONES: "${CLOUDFLARE_EXCLUDE_ZONES}"
+      FREE_TIER: "${CLOUDFLARE_FREE_TIER}"
+      LISTEN: ":{{ monitoring_cloudflare_container_port }}"
+      SCRAPE_DELAY: "{{ monitoring_cloudflare_scrape_delay }}"
+      SCRAPE_INTERVAL: "{{ monitoring_cloudflare_scrape_interval }}"
+      CF_TIMEOUT: "{{ monitoring_cloudflare_timeout_seconds }}"
+    ports:
+      - "{{ monitoring_cloudflare_container_port }}:{{ monitoring_cloudflare_container_port }}"
+{% endif %}
 
   chronograf:
     image: chronograf:1.10

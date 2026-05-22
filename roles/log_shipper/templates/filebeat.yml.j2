@@ -1,0 +1,50 @@
+---
+filebeat.inputs:
+  - type: filestream
+    enabled: {{ log_shipper_system_logs_enabled | bool | lower }}
+    id: "homelab-system"
+    paths:
+{% for path in log_shipper_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "system"]
+
+{% if log_shipper_kern_log_enabled | bool %}
+  - type: filestream
+    enabled: true
+    id: "homelab-kernel"
+    paths:
+{% for path in log_shipper_kernel_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "kernel"]
+{% endif %}
+
+{% if log_shipper_audit_logs_enabled | bool %}
+  - type: filestream
+    enabled: true
+    id: "homelab-audit"
+    paths:
+{% for path in log_shipper_audit_log_files %}
+      - {{ path }}
+{% endfor %}
+    tags: ["linux", "audit"]
+{% endif %}
+
+processors:
+  - add_host_metadata: {}
+  - add_cloud_metadata: {}
+  - add_fields:
+      target: ""
+      fields:
+        deployment: homelab
+        service: filebeat
+
+output.logstash:
+  hosts: {{ log_shipper_logstash_hosts | to_json }}
+
+logging.level: warning
+logging.to_stderr: true
+logging.selectors: ["*"]

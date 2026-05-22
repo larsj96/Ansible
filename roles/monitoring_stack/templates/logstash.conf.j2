@@ -29,8 +29,20 @@ filter {
 }
 
 output {
-  opensearch {
-    hosts => ["http://opensearch:9200"]
-    index => "homelab-%{+YYYY.MM.dd}"
+  if [type] == "syslog" {
+    opensearch {
+      hosts => ["http://opensearch:9200"]
+      index => "homelab-syslog-%{+YYYY.MM.dd}"
+    }
+  } else if [@metadata][beat] {
+    opensearch {
+      hosts => ["http://opensearch:9200"]
+      index => "homelab-%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+    }
+  } else {
+    opensearch {
+      hosts => ["http://opensearch:9200"]
+      index => "homelab-generic-%{+YYYY.MM.dd}"
+    }
   }
 }

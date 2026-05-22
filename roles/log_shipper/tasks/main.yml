@@ -1,0 +1,49 @@
+---
+- name: Guardrails for optional log shipping
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+      - ansible_architecture == "x86_64"
+      - log_shipper_output_protocol == "logstash"
+      - log_shipper_logstash_hosts | length > 0
+      - log_shipper_system_logs_enabled | bool or log_shipper_audit_logs_enabled | bool
+    fail_msg: "log_shipper requires Debian/Ubuntu x86_64 and at least one log source enabled."
+  when: log_shipper_enabled | bool
+
+- name: Ensure required Filebeat package cache directory
+  ansible.builtin.file:
+    path: /tmp
+    state: directory
+    mode: "1777"
+  when: log_shipper_enabled | bool
+
+- name: Download Filebeat package
+  ansible.builtin.get_url:
+    url: "{{ log_shipper_filebeat_url }}"
+    dest: "{{ log_shipper_filebeat_cache }}"
+    mode: "0644"
+  when: log_shipper_enabled | bool
+
+- name: Install Filebeat
+  ansible.builtin.apt:
+    deb: "{{ log_shipper_filebeat_cache }}"
+    state: present
+  when: log_shipper_enabled | bool
+  notify: Restart Filebeat
+
+- name: Configure Filebeat
+  ansible.builtin.template:
+    src: filebeat.yml.j2
+    dest: /etc/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: "0640"
+  when: log_shipper_enabled | bool
+  notify: Restart Filebeat
+
+- name: Ensure Filebeat is enabled and running
+  ansible.builtin.systemd:
+    name: filebeat
+    state: started
+    enabled: true
+  when: log_shipper_enabled | bool

@@ -12,6 +12,7 @@
       - grafana_admin_password != "ChangeMe-Set-In-Ansible-Vault"
       - not (monitoring_proxmox_enabled | bool) or (monitoring_proxmox_api_token is defined and monitoring_proxmox_api_token | length > 20)
       - not (monitoring_snmp_enabled | bool) or (monitoring_snmp_community is defined and monitoring_snmp_community | length > 0)
+      - not (monitoring_cloudflare_enabled | bool) or (monitoring_cloudflare_api_token is defined and monitoring_cloudflare_api_token | length > 20)
     fail_msg: "Define monitoring secrets with Ansible Vault or an ignored vars file before deploying."
   no_log: true
 
@@ -91,6 +92,15 @@
     - grafana-dashboard-fortigate-health.json.j2
     - grafana-dashboard-proxmox-ve.json.j2
 
+- name: Install Cloudflare Grafana dashboard
+  ansible.builtin.template:
+    src: grafana-dashboard-cloudflare.json.j2
+    dest: "{{ monitoring_stack_dir }}/grafana/dashboards/homelab/cloudflare.json"
+    owner: root
+    group: root
+    mode: "0644"
+  when: monitoring_cloudflare_enabled | bool
+
 - name: Install Palo Alto SNMP dashboard
   ansible.builtin.copy:
     src: grafana/dashboards/palo-alto-snmp.json
@@ -119,6 +129,11 @@
       INFLUXDB_ADMIN_TOKEN={{ influxdb_admin_token }}
       OPENSEARCH_INITIAL_ADMIN_PASSWORD={{ opensearch_initial_admin_password }}
       GRAFANA_ADMIN_PASSWORD={{ grafana_admin_password }}
+      CLOUDFLARE_API_TOKEN={{ monitoring_cloudflare_api_token }}
+      CLOUDFLARE_ACCOUNTS={{ monitoring_cloudflare_accounts | default([]) | join(',') }}
+      CLOUDFLARE_ZONES={{ monitoring_cloudflare_zones | default([]) | join(',') }}
+      CLOUDFLARE_EXCLUDE_ZONES={{ monitoring_cloudflare_excluded_zones | default([]) | join(',') }}
+      CLOUDFLARE_FREE_TIER={{ monitoring_cloudflare_free_tier | ternary('true','false') }}
       PROXMOX_API_TOKEN={{ monitoring_proxmox_api_token }}
   no_log: true
 
@@ -128,8 +143,8 @@
     chdir: "{{ monitoring_stack_dir }}"
   changed_when: true
 
-- name: Restart Grafana and Telegraf after provisioning changes
+- name: Restart Grafana, Logstash, and Telegraf after provisioning changes
   ansible.builtin.command:
-    cmd: docker compose restart grafana telegraf
+    cmd: docker compose restart {% if monitoring_cloudflare_enabled %}grafana logstash telegraf cloudflare-exporter{% else %}grafana logstash telegraf{% endif %}
     chdir: "{{ monitoring_stack_dir }}"
   changed_when: true

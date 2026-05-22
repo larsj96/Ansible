@@ -1,0 +1,89 @@
+{
+  "uid": "homelab-cloudflare",
+  "title": "Cloudflare Metrics",
+  "tags": ["homelab", "cloudflare", "influxdb"],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-6h", "to": "now" },
+  "templating": {
+    "list": [
+      {
+        "name": "zone",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"{{ influxdb_bucket }}\", tag: \"zone\", predicate: (r) => r._measurement == \"cloudflare_zone_requests_total\")",
+        "refresh": 1,
+        "includeAll": true,
+        "current": { "selected": true, "text": "All", "value": "All" }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Request volume by zone",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"{{ influxdb_bucket }}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_zone_requests_total\")\n  |> filter(fn: (r) => \"${zone}\" == \"All\" or r.zone == \"${zone}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 2,
+      "title": "TLS bandwidth (bytes)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "bytes", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"{{ influxdb_bucket }}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_zone_bandwidth_total\")\n  |> filter(fn: (r) => \"${zone}\" == \"All\" or r.zone == \"${zone}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 3,
+      "title": "Unique visitors by zone",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"{{ influxdb_bucket }}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_zone_uniques_total\")\n  |> filter(fn: (r) => \"${zone}\" == \"All\" or r.zone == \"${zone}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+        }
+      ],
+      "options": {}
+    },
+    {
+      "id": 4,
+      "title": "Threats by zone",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+          "query": "from(bucket: \"{{ influxdb_bucket }}\")\n  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)\n  |> filter(fn: (r) => r._measurement == \"cloudflare_zone_threats_total\")\n  |> filter(fn: (r) => \"${zone}\" == \"All\" or r.zone == \"${zone}\")\n  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)"
+        }
+      ],
+      "options": {}
+    }
+  ]
+}

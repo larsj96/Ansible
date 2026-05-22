@@ -30,6 +30,15 @@
   timeout = "5s"
   insecure_skip_verify = true
 
+{% if monitoring_cloudflare_enabled %}
+[[inputs.prometheus]]
+  urls = ["http://cloudflare-exporter:{{ monitoring_cloudflare_container_port }}/metrics"]
+  metric_version = 1
+  fielddrop = ["_measurement_error", "_start", "_end"]
+  namepass = ["cloudflare_*"]
+  response_timeout = "{{ monitoring_cloudflare_telegraf_response_timeout | default('60s') }}"
+{% endif %}
+
 {% if monitoring_proxmox_enabled | bool %}
 {% for target in monitoring_proxmox_targets %}
 [[inputs.proxmox]]

@@ -1,0 +1,24 @@
+---
+log_shipper_enabled: true
+
+log_shipper_filebeat_version: "8.17.0"
+log_shipper_filebeat_deb: "filebeat-{{ log_shipper_filebeat_version }}-amd64.deb"
+log_shipper_filebeat_url: "https://artifacts.elastic.co/downloads/beats/filebeat/{{ log_shipper_filebeat_deb }}"
+log_shipper_filebeat_cache: "/tmp/{{ log_shipper_filebeat_deb }}"
+
+log_shipper_output_protocol: "logstash"
+log_shipper_logstash_hosts:
+  - "10.0.0.38:5044"
+
+log_shipper_system_logs_enabled: true
+log_shipper_audit_logs_enabled: true
+log_shipper_kern_log_enabled: true
+log_shipper_log_files:
+  - "/var/log/syslog"
+  - "/var/log/auth.log"
+
+log_shipper_audit_log_files:
+  - "/var/log/audit/audit.log"
+
+log_shipper_kernel_log_files:
+  - "/var/log/kern.log"
