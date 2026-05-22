@@ -93,7 +93,11 @@ ansible-playbook playbooks/monitoring.yml --ask-vault-pass
 
 When Terraform creates a new Ubuntu VM, add it to `[telegraf_agents]` in `inventory/homelab.ini`, then rerun the monitoring playbook.
 
-Palo Alto SNMP polling is scaffolded but disabled by default. See `docs/palo-alto-snmp-monitoring.md` before enabling it; SNMPv3 credentials belong in the vaulted monitoring secrets file.
+HP iLO SNMP polling is enabled for `ilo-hp2` (`10.0.124.165`) and `ilo-hp3` (`10.0.124.163`) through `monitoring_snmp_targets`. `ilo-hp1` (`10.0.124.164`) is documented as pending because it currently times out on UDP/161.
+
+Palo Alto SNMP polling is enabled against the in-band interface `10.1.1.65`, because the dedicated management address does not answer SNMP from `monitoring1` today. Credentials belong in the vaulted monitoring secrets file.
+
+Proxmox metrics are collected centrally with Telegraf's Proxmox API input for `hp1`, `hp2`, `hp3`, and `dell1`. The Grafana dashboard is provisioned from `roles/monitoring_stack/templates/grafana-dashboard-proxmox-ve.json.j2`.
 
 ## Management Workbench
 
