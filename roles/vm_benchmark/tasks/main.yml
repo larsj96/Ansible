@@ -102,11 +102,15 @@
   when: benchmark_cleanup_workfiles | bool
 
 - name: Archive benchmark results
-  ansible.builtin.archive:
-    path: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}"
-    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}-{{ inventory_hostname }}.tgz"
-    format: gz
-    mode: "0644"
+  ansible.builtin.command:
+    argv:
+      - tar
+      - -C
+      - "{{ benchmark_remote_dir }}"
+      - -czf
+      - "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}-{{ inventory_hostname }}.tgz"
+      - "{{ benchmark_run_id }}"
+  changed_when: true
 
 - name: Create local result directory
   ansible.builtin.file:
