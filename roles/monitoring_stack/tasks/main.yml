@@ -90,6 +90,7 @@
     - grafana-dashboard-network-tls.json.j2
     - grafana-dashboard-ilo-health.json.j2
     - grafana-dashboard-fortigate-health.json.j2
+    - grafana-dashboard-paloalto-panograf.json.j2
     - grafana-dashboard-proxmox-ve.json.j2
 
 - name: Install Cloudflare Grafana dashboard

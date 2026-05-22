@@ -362,6 +362,207 @@
     name = "IfHcOutOctets.{{ iface_index }}"
     oid = "1.3.6.1.2.1.31.1.1.1.10.{{ iface_index }}"
 {% endfor %}
+
+# Panograf-compatible PAN-OS collection. This keeps the original homelab
+# PanSystem measurement above, while adding the measurement/field names used by
+# the Panograf/Panos2Grafana dashboard style.
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ target.community | default(monitoring_snmp_community) }}"
+  interval = "30s"
+  timeout = "10s"
+  retries = 2
+  name = "pan_system"
+
+  [inputs.snmp.tags]
+    cluster = "{{ target.cluster | default('homelab') }}"
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type | default('palo-alto') }}"
+    agent_host = "{{ target.address }}"
+
+  [[inputs.snmp.field]]
+    name = "hostname"
+    oid = "1.3.6.1.2.1.1.5.0"
+    is_tag = true
+  [[inputs.snmp.field]]
+    name = "uptime"
+    oid = "1.3.6.1.2.1.1.3.0"
+  [[inputs.snmp.field]]
+    name = "panSysHAState"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.11.0"
+  [[inputs.snmp.field]]
+    name = "panSessionUtilization"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.1.0"
+  [[inputs.snmp.field]]
+    name = "panSessionActiveTcp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.4.0"
+  [[inputs.snmp.field]]
+    name = "panSessionActiveUdp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.5.0"
+  [[inputs.snmp.field]]
+    name = "panSessionActiveICMP"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.6.0"
+  [[inputs.snmp.field]]
+    name = "panGPGWUtilizationActiveTunnels"
+    oid = "1.3.6.1.4.1.25461.2.1.2.5.1.3.0"
+
+{% for cpu_index in target.cpu_indexes | default(range(1, 5) | list) %}
+  [[inputs.snmp.field]]
+    name = "hrProcessorLoad.{{ cpu_index }}"
+    oid = "1.3.6.1.2.1.25.3.3.1.2.{{ cpu_index }}"
+{% endfor %}
+
+{% for fan_index in target.fan_indexes | default(range(1, 21) | list) %}
+  [[inputs.snmp.field]]
+    name = "fan{{ fan_index }}"
+    oid = "1.3.6.1.2.1.99.1.1.1.4.{{ fan_index }}"
+{% endfor %}
+
+{% for temp_index in target.temperature_indexes | default(range(1, 11) | list) %}
+  [[inputs.snmp.field]]
+    name = "cpu_temp{{ temp_index }}"
+    oid = "1.3.6.1.2.1.99.1.1.1.4.{{ temp_index }}"
+{% endfor %}
+
+  [[inputs.snmp.table]]
+    name = "pan_zone"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "zone"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.10.1.1"
+    is_tag = true
+  [[inputs.snmp.table.field]]
+    name = "panZoneActiveTcpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.10.1.2"
+  [[inputs.snmp.table.field]]
+    name = "panZoneActiveUdpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.10.1.3"
+  [[inputs.snmp.table.field]]
+    name = "panZoneActiveOtherIpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.10.1.4"
+
+  [[inputs.snmp.table]]
+    name = "pan_vsys"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "Vsys"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.9.1.2"
+    is_tag = true
+  [[inputs.snmp.table.field]]
+    name = "panVsysActiveSessions"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.9.1.4"
+  [[inputs.snmp.table.field]]
+    name = "panVsysActiveTcpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.9.1.6"
+  [[inputs.snmp.table.field]]
+    name = "panVsysActiveUdpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.9.1.7"
+  [[inputs.snmp.table.field]]
+    name = "panVsysActiveOtherIpCps"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.9.1.8"
+
+  [[inputs.snmp.table]]
+    name = "pan_buffers"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "hrStorageIndex"
+    oid = "1.3.6.1.2.1.25.2.3.1.1"
+    is_tag = true
+  [[inputs.snmp.table.field]]
+    name = "hrStorageDescr"
+    oid = "1.3.6.1.2.1.25.2.3.1.3"
+    is_tag = true
+  [[inputs.snmp.table.field]]
+    name = "hrStorageSize"
+    oid = "1.3.6.1.2.1.25.2.3.1.5"
+  [[inputs.snmp.table.field]]
+    name = "hrStorageUsed"
+    oid = "1.3.6.1.2.1.25.2.3.1.6"
+
+  [[inputs.snmp.table]]
+    name = "pan_global_counters"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "panFlowIpfragFragErr"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.10.1"
+  [[inputs.snmp.table.field]]
+    name = "panFlowIpfragRecv"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.10.2"
+  [[inputs.snmp.table.field]]
+    name = "panTcpDeny"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.11.2"
+  [[inputs.snmp.table.field]]
+    name = "panTcpDropPacket"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.11.4"
+  [[inputs.snmp.table.field]]
+    name = "panFlowActionClose"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.11.5"
+  [[inputs.snmp.table.field]]
+    name = "panFlowActionReset"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.11.6"
+  [[inputs.snmp.table.field]]
+    name = "panFlowTcpNonSyn"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.11.7"
+
+  [[inputs.snmp.table]]
+    name = "pan_dos"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "panFlowPolicyDeny"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.10"
+  [[inputs.snmp.table.field]]
+    name = "panFlowPolicyNat"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.11"
+  [[inputs.snmp.table.field]]
+    name = "panFlowScanDrop"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.12"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosDropIpBlocked"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.13"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRedIcmp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.14"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRedIcmp6"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.15"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRedIp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.16"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRedTcp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.17"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRedUdp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.18"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosBlkNumEntries"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.2"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRuleDrop"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.23"
+  [[inputs.snmp.table.field]]
+    name = "panFlowDosRuleDeny"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.8.22"
+
+  [[inputs.snmp.table]]
+    name = "pan_drop"
+    inherit_tags = ["hostname"]
+  [[inputs.snmp.table.field]]
+    name = "panFlowFwdL3TtlZero"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.9.1"
+  [[inputs.snmp.table.field]]
+    name = "panFlowHostServiceDeny"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.9.3"
+  [[inputs.snmp.table.field]]
+    name = "panFlowHostServiceUnknown"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.9.4"
+  [[inputs.snmp.table.field]]
+    name = "panPktAllocFailure"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.9.5"
+  [[inputs.snmp.table.field]]
+    name = "panSessionDiscard"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.19.9.7"
 {% endfor %}
 {% endif %}
 
