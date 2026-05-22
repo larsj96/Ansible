@@ -72,6 +72,55 @@
     mode: "0644"
     content: "{{ benchmark_memory.stdout }}\n"
 
+- name: Start iperf3 server
+  ansible.builtin.command:
+    argv:
+      - iperf3
+      - --server
+      - --daemon
+      - --one-off
+      - --port
+      - "{{ benchmark_iperf_port }}"
+  delegate_to: "{{ benchmark_iperf_server }}"
+  become: true
+  run_once: false
+  changed_when: true
+  when:
+    - benchmark_iperf_enabled | bool
+    - benchmark_iperf_server | length > 0
+    - inventory_hostname != benchmark_iperf_server
+
+- name: Run iperf3 network benchmark
+  ansible.builtin.command:
+    argv:
+      - iperf3
+      - --client
+      - "{{ hostvars[benchmark_iperf_server].ansible_host | default(benchmark_iperf_server) }}"
+      - --time
+      - "{{ benchmark_iperf_seconds }}"
+      - --parallel
+      - "{{ benchmark_iperf_parallel }}"
+      - --json
+      - --port
+      - "{{ benchmark_iperf_port }}"
+  register: benchmark_iperf
+  changed_when: true
+  when:
+    - benchmark_iperf_enabled | bool
+    - benchmark_iperf_server | length > 0
+    - inventory_hostname != benchmark_iperf_server
+
+- name: Store iperf3 benchmark output
+  ansible.builtin.copy:
+    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}/iperf3.json"
+    owner: "{{ ansible_user | default('ubuntu') }}"
+    group: "{{ ansible_user | default('ubuntu') }}"
+    mode: "0644"
+    content: "{{ benchmark_iperf.stdout }}\n"
+  when:
+    - benchmark_iperf is defined
+    - benchmark_iperf.stdout is defined
+
 - name: Run fio disk profiles
   ansible.builtin.command:
     argv:

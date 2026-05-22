@@ -9,6 +9,11 @@ benchmark_fio_size: "8G"
 benchmark_fio_numjobs: 4
 benchmark_fio_iodepth: 32
 benchmark_cleanup_workfiles: true
+benchmark_iperf_enabled: true
+benchmark_iperf_server: "{{ groups.get('iperf_servers', [''])[0] }}"
+benchmark_iperf_seconds: 30
+benchmark_iperf_parallel: 4
+benchmark_iperf_port: 5201
 benchmark_packages:
   - fio
   - jq
