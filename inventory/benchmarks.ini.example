@@ -2,4 +2,5 @@
 bench-hp1 ansible_host=10.0.0.x ansible_user=ubuntu proxmox_node=hp1 proxmox_storage=nvme-local
 bench-hp2 ansible_host=10.0.0.y ansible_user=ubuntu proxmox_node=hp2 proxmox_storage=nvme-local
 bench-hp3 ansible_host=10.0.0.z ansible_user=ubuntu proxmox_node=hp3 proxmox_storage=nvme-local
+bench-hp3-sas ansible_host=10.0.0.s ansible_user=ubuntu proxmox_node=hp3 proxmox_storage=sas-hp3
 bench-dell1 ansible_host=10.0.0.w ansible_user=ubuntu proxmox_node=dell1 proxmox_storage=nvme-dell
