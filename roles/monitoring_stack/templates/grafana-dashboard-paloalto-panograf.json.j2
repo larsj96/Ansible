@@ -1,31 +1,73 @@
 {
   "uid": "paloalto-panograf-homelab",
   "title": "Palo Alto PAN-OS Panograf",
-  "tags": ["homelab", "palo-alto", "panos", "panograf", "snmp"],
+  "tags": [
+    "homelab",
+    "palo-alto",
+    "panos",
+    "panograf",
+    "snmp"
+  ],
   "timezone": "browser",
   "schemaVersion": 39,
   "version": 1,
   "refresh": "30s",
-  "time": { "from": "now-6h", "to": "now" },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
   "templating": {
     "list": [
       {
         "name": "hostname",
         "type": "query",
-        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-homelab"
+        },
         "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"hostname\", predicate: (r) => r._measurement == \"pan_system\")",
         "refresh": 1,
         "includeAll": true,
-        "current": { "selected": true, "text": "All", "value": "All" }
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        },
+        "allValue": ".*"
       },
       {
         "name": "zone",
         "type": "query",
-        "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-homelab"
+        },
         "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"zone\", predicate: (r) => r._measurement == \"pan_zone\")",
         "refresh": 1,
         "includeAll": true,
-        "current": { "selected": true, "text": "All", "value": "All" }
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        },
+        "allValue": ".*"
+      },
+      {
+        "name": "interface",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "influxdb-homelab"
+        },
+        "query": "import \"influxdata/influxdb/schema\"\nschema.tagValues(bucket: \"homelab\", tag: \"ifName\", predicate: (r) => r._measurement == \"pan_interfaces\")",
+        "refresh": 1,
+        "includeAll": true,
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": ".*"
+        }
       }
     ]
   },
@@ -34,14 +76,32 @@
       "id": 1,
       "title": "CPU load",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 7 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and (r._field == \"hrProcessorLoad.1\" or r._field == \"hrProcessorLoad.2\" or r._field == \"hrProcessorLoad.3\" or r._field == \"hrProcessorLoad.4\")) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.hostname + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and (r._field == \"hrProcessorLoad.1\" or r._field == \"hrProcessorLoad.2\" or r._field == \"hrProcessorLoad.3\" or r._field == \"hrProcessorLoad.4\")) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.hostname + \" \" + r._field }))"
         }
       ]
     },
@@ -49,14 +109,31 @@
       "id": 2,
       "title": "Active sessions",
       "type": "timeseries",
-      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 7 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 7
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => (r._measurement == \"pan_vsys\" and r._field == \"panVsysActiveSessions\") or (r._measurement == \"pan_system\" and (r._field == \"panSessionActiveTcp\" or r._field == \"panSessionActiveUdp\" or r._field == \"panSessionActiveICMP\"))) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: if exists r.Vsys then r.Vsys + \" sessions\" else r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => (r._measurement == \"pan_vsys\" and r._field == \"panVsysActiveSessions\") or (r._measurement == \"pan_system\" and (r._field == \"panSessionActiveTcp\" or r._field == \"panSessionActiveUdp\" or r._field == \"panSessionActiveICMP\"))) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: if exists r.Vsys then r.Vsys + \" sessions\" else r._field }))"
         }
       ]
     },
@@ -64,15 +141,44 @@
       "id": 3,
       "title": "GlobalProtect tunnels",
       "type": "stat",
-      "gridPos": { "x": 16, "y": 0, "w": 4, "h": 7 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "short", "min": 0 }, "overrides": [] },
-      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "area", "justifyMode": "auto" },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 7
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto"
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field == \"panGPGWUtilizationActiveTunnels\") |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> last()"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field == \"panGPGWUtilizationActiveTunnels\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> last()"
         }
       ]
     },
@@ -80,15 +186,43 @@
       "id": 4,
       "title": "HA state",
       "type": "stat",
-      "gridPos": { "x": 20, "y": 0, "w": 4, "h": 7 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
-      "options": { "reduceOptions": { "values": false, "calcs": ["lastNotNull"], "fields": "" }, "orientation": "auto", "colorMode": "value", "graphMode": "none", "justifyMode": "auto" },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 7
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field == \"panSysHAState\") |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> last()"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field == \"panSysHAState\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> last()"
         }
       ]
     },
@@ -96,14 +230,31 @@
       "id": 5,
       "title": "Zone CPS",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 7, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 0,
+        "y": 7,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_zone\" and (r._field == \"panZoneActiveTcpCps\" or r._field == \"panZoneActiveUdpCps\" or r._field == \"panZoneActiveOtherIpCps\")) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> filter(fn: (r) => \"${zone}\" == \"All\" or r.zone == \"${zone}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.zone + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_zone\" and (r._field == \"panZoneActiveTcpCps\" or r._field == \"panZoneActiveUdpCps\" or r._field == \"panZoneActiveOtherIpCps\")) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> filter(fn: (r) => r.zone =~ /^${zone:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.zone + \" \" + r._field }))"
         }
       ]
     },
@@ -111,59 +262,129 @@
       "id": 6,
       "title": "Vsys CPS",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 7, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "ops", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 12,
+        "y": 7,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ops",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_vsys\" and (r._field == \"panVsysActiveTcpCps\" or r._field == \"panVsysActiveUdpCps\" or r._field == \"panVsysActiveOtherIpCps\")) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.Vsys + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_vsys\" and (r._field == \"panVsysActiveTcpCps\" or r._field == \"panVsysActiveUdpCps\" or r._field == \"panVsysActiveOtherIpCps\")) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.Vsys + \" \" + r._field }))"
         }
       ]
     },
     {
       "id": 7,
-      "title": "Fans",
+      "title": "Hardware Sensors",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 15, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "rpm", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 0,
+        "y": 15,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field =~ /^fan/) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.hostname + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_sensors\" and r._field == \"entPhySensorValue\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.entPhysicalName + \" (\" + r.entPhySensorUnitsDisplay + \")\" }))"
         }
-      ]
+      ],
+      "description": "ENTITY-SENSOR values exposed by PAN-OS. PA-510 currently exposes CPU die temperature; it does not expose fan tachometer values over SNMP."
     },
     {
       "id": 8,
-      "title": "Temperature sensors",
+      "title": "Legacy Temperature OIDs",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 15, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "celsius" }, "overrides": [] },
+      "gridPos": {
+        "x": 12,
+        "y": 15,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "celsius"
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field =~ /_temp/) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.hostname + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_system\" and r._field =~ /_temp/) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> map(fn: (r) => ({ r with _field: r.hostname + \" \" + r._field }))"
         }
-      ]
+      ],
+      "description": "Legacy direct sensor OIDs retained for devices that expose them. Prefer Hardware Sensors when available."
     },
     {
       "id": 9,
       "title": "Storage and packet buffers",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 23, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "used = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_buffers\" and r._field == \"hrStorageUsed\")\nsize = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_buffers\" and r._field == \"hrStorageSize\")\njoin(tables: {used: used, size: size}, on: [\"_time\", \"hostname\", \"hrStorageDescr\"]) |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> map(fn: (r) => ({ r with _value: float(v: r._value_used) / float(v: r._value_size) * 100.0, _field: r.hrStorageDescr })) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "used = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_buffers\" and r._field == \"hrStorageUsed\")\nsize = from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_buffers\" and r._field == \"hrStorageSize\")\njoin(tables: {used: used, size: size}, on: [\"_time\", \"hostname\", \"hrStorageDescr\"]) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> map(fn: (r) => ({ r with _value: float(v: r._value_used) / float(v: r._value_size) * 100.0, _field: r.hrStorageDescr })) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)"
         }
       ]
     },
@@ -171,14 +392,31 @@
       "id": 10,
       "title": "Global counters per interval",
       "type": "timeseries",
-      "gridPos": { "x": 12, "y": 23, "w": 12, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "pps", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pps",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_global_counters\" or r._measurement == \"pan_drop\") |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> difference(nonNegative: true) |> map(fn: (r) => ({ r with _field: r._measurement + \" \" + r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_global_counters\" or r._measurement == \"pan_drop\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> difference(nonNegative: true) |> map(fn: (r) => ({ r with _field: r._measurement + \" \" + r._field }))"
         }
       ]
     },
@@ -186,16 +424,211 @@
       "id": 11,
       "title": "DoS and policy counters per interval",
       "type": "timeseries",
-      "gridPos": { "x": 0, "y": 31, "w": 24, "h": 8 },
-      "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-      "fieldConfig": { "defaults": { "unit": "pps", "min": 0 }, "overrides": [] },
+      "gridPos": {
+        "x": 0,
+        "y": 31,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "pps",
+          "min": 0
+        },
+        "overrides": []
+      },
       "targets": [
         {
           "refId": "A",
-          "datasource": { "type": "influxdb", "uid": "influxdb-homelab" },
-          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_dos\") |> filter(fn: (r) => \"${hostname}\" == \"All\" or r.hostname == \"${hostname}\") |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> difference(nonNegative: true) |> map(fn: (r) => ({ r with _field: r._field }))"
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_dos\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> difference(nonNegative: true) |> map(fn: (r) => ({ r with _field: r._field }))"
         }
       ]
+    },
+    {
+      "id": 12,
+      "title": "Interface throughput",
+      "type": "timeseries",
+      "gridPos": {
+        "x": 0,
+        "y": 39,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bps",
+          "min": 0
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_interfaces\" and (r._field == \"ifHCInOctets\" or r._field == \"ifHCOutOctets\")) |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> filter(fn: (r) => r.ifName =~ /^${interface:regex}$/) |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false) |> derivative(unit: 1s, nonNegative: true) |> map(fn: (r) => ({ r with _value: r._value * 8.0, _field: r.ifName + \" \" + r._field }))"
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Interface status",
+      "type": "stat",
+      "gridPos": {
+        "x": 12,
+        "y": 39,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "up",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "down",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_interfaces\" and r._field == \"ifOperStatus\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> filter(fn: (r) => r.ifName =~ /^${interface:regex}$/) |> group(columns: [\"ifName\"]) |> last() |> map(fn: (r) => ({ r with _field: r.ifName }))"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
+    },
+    {
+      "id": 14,
+      "title": "Tunnel interface status",
+      "type": "stat",
+      "gridPos": {
+        "x": 18,
+        "y": 39,
+        "w": 6,
+        "h": 8
+      },
+      "datasource": {
+        "type": "influxdb",
+        "uid": "influxdb-homelab"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "1": {
+                  "text": "up",
+                  "color": "green"
+                },
+                "2": {
+                  "text": "down",
+                  "color": "red"
+                }
+              }
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "influxdb-homelab"
+          },
+          "query": "from(bucket: \"homelab\") |> range(start: v.timeRangeStart, stop: v.timeRangeStop) |> filter(fn: (r) => r._measurement == \"pan_interfaces\" and r._field == \"ifOperStatus\") |> filter(fn: (r) => r.hostname =~ /^${hostname:regex}$/) |> filter(fn: (r) => r.ifName =~ /tunnel|ipsec|vpn/) |> group(columns: [\"ifName\"]) |> last() |> map(fn: (r) => ({ r with _field: r.ifName }))"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "values": false,
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": ""
+        },
+        "orientation": "auto",
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto"
+      }
     }
   ]
 }
