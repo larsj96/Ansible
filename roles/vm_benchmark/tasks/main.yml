@@ -117,6 +117,7 @@
       - --port
       - "{{ benchmark_iperf_port }}"
   register: benchmark_iperf
+  throttle: 1
   changed_when: true
   when:
     - benchmark_iperf_enabled | bool
