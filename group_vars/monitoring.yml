@@ -160,3 +160,13 @@ monitoring_fortigate_snmp_interfaces:
   - { index: 41, name: "nessus" }
   - { index: 42, name: "to-hostinger" }
   - { index: 43, name: "hytte vpn" }
+
+monitoring_paloalto_snmp_enabled: true
+monitoring_paloalto_snmp_targets:
+  - name: "pa510-homelab-ljn"
+    address: "10.1.1.3"
+    device_type: "palo-alto"
+    community: "{{ monitoring_snmp_community }}"
+    interface_indexes: "{{ range(1, 31) | list }}"
+    cpu_indexes: "{{ range(1, 5) | list }}"
+    fan_indexes: "{{ range(1, 21) | list }}"

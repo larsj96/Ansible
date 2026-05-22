@@ -280,6 +280,82 @@
 {% endfor %}
 {% endif %}
 
+{% if monitoring_paloalto_snmp_enabled | default(false) | bool %}
+{% for target in monitoring_paloalto_snmp_targets | default([]) %}
+[[inputs.snmp]]
+  agents = ["udp://{{ target.address }}:161"]
+  version = 2
+  community = "{{ target.community | default(monitoring_snmp_community) }}"
+  timeout = "10s"
+  retries = 2
+  name = "PanSystem"
+
+  [inputs.snmp.tags]
+    Hostname = "{{ target.name }}"
+    device = "{{ target.name }}"
+    device_type = "{{ target.device_type | default('palo-alto') }}"
+    agent_host = "{{ target.address }}"
+
+  [[inputs.snmp.field]]
+    name = "UpTime"
+    oid = "1.3.6.1.2.1.1.3.0"
+
+  [[inputs.snmp.field]]
+    name = "PanSysSwVersion"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.1.0"
+
+  [[inputs.snmp.field]]
+    name = "PanTyp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.2.0"
+
+  [[inputs.snmp.field]]
+    name = "PanSysHaState"
+    oid = "1.3.6.1.4.1.25461.2.1.2.1.11.0"
+
+  [[inputs.snmp.field]]
+    name = "PanSessionActiveTcp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.4.0"
+
+  [[inputs.snmp.field]]
+    name = "PanSessionActiveUdp"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.5.0"
+
+  [[inputs.snmp.field]]
+    name = "PanSessionActiveICMP"
+    oid = "1.3.6.1.4.1.25461.2.1.2.3.6.0"
+
+{% for cpu_index in target.cpu_indexes | default(range(1, 5) | list) %}
+  [[inputs.snmp.field]]
+    name = "HrProcessorLoad.{{ cpu_index }}"
+    oid = "1.3.6.1.2.1.25.3.3.1.2.{{ cpu_index }}"
+{% endfor %}
+
+{% for fan_index in target.fan_indexes | default(range(1, 21) | list) %}
+  [[inputs.snmp.field]]
+    name = "Fan.{{ fan_index }}"
+    oid = "1.3.6.1.2.1.99.1.1.1.4.{{ fan_index }}"
+{% endfor %}
+
+{% for iface_index in target.interface_indexes | default(range(1, 31) | list) %}
+  [[inputs.snmp.field]]
+    name = "IfOperStatus.{{ iface_index }}"
+    oid = "1.3.6.1.2.1.2.2.1.8.{{ iface_index }}"
+
+  [[inputs.snmp.field]]
+    name = "IfDescr.{{ iface_index }}"
+    oid = "1.3.6.1.2.1.2.2.1.2.{{ iface_index }}"
+
+  [[inputs.snmp.field]]
+    name = "IfHcInOctets.{{ iface_index }}"
+    oid = "1.3.6.1.2.1.31.1.1.1.6.{{ iface_index }}"
+
+  [[inputs.snmp.field]]
+    name = "IfHcOutOctets.{{ iface_index }}"
+    oid = "1.3.6.1.2.1.31.1.1.1.10.{{ iface_index }}"
+{% endfor %}
+{% endfor %}
+{% endif %}
+
 {% if monitoring_fortigate_snmp_enabled | bool %}
 {% for target in monitoring_fortigate_snmp_targets %}
 [[inputs.snmp]]

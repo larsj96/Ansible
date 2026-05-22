@@ -90,6 +90,22 @@
     - grafana-dashboard-ilo-health.json.j2
     - grafana-dashboard-fortigate-health.json.j2
 
+- name: Install Palo Alto SNMP dashboard
+  ansible.builtin.copy:
+    src: grafana/dashboards/palo-alto-snmp.json
+    dest: "{{ monitoring_stack_dir }}/grafana/dashboards/homelab/palo-alto-snmp.json"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install full Palo Alto PAN-OS dashboard
+  ansible.builtin.copy:
+    src: grafana/dashboards/paloalto-panos-firewall-19945.json
+    dest: "{{ monitoring_stack_dir }}/grafana/dashboards/homelab/paloalto-panos-firewall-19945.json"
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Install monitoring env file
   ansible.builtin.copy:
     dest: "{{ monitoring_stack_dir }}/.env"
