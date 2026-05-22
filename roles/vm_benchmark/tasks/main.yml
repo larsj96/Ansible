@@ -26,6 +26,7 @@
         "inventory_hostname": {{ inventory_hostname | to_json }},
         "ansible_host": {{ ansible_host | default('') | to_json }},
         "proxmox_node": {{ proxmox_node | default('unknown') | to_json }},
+        "proxmox_storage": {{ proxmox_storage | default('unknown') | to_json }},
         "cpu_vcpus": {{ ansible_processor_vcpus | default(ansible_processor_count) | to_json }},
         "memory_mb": {{ ansible_memtotal_mb | to_json }},
         "kernel": {{ ansible_kernel | to_json }},
