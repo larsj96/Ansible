@@ -1,0 +1,7 @@
+---
+- name: Run repeatable VM benchmarks
+  hosts: benchmark_vms
+  become: true
+  gather_facts: true
+  roles:
+    - vm_benchmark

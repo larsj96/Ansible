@@ -1,0 +1,123 @@
+---
+- name: Install benchmark packages
+  ansible.builtin.apt:
+    name: "{{ benchmark_packages }}"
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Create benchmark run directory
+  ansible.builtin.file:
+    path: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}"
+    state: directory
+    owner: "{{ ansible_user | default('ubuntu') }}"
+    group: "{{ ansible_user | default('ubuntu') }}"
+    mode: "0755"
+
+- name: Write host metadata
+  ansible.builtin.copy:
+    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}/host.json"
+    owner: "{{ ansible_user | default('ubuntu') }}"
+    group: "{{ ansible_user | default('ubuntu') }}"
+    mode: "0644"
+    content: |
+      {
+        "run_id": {{ benchmark_run_id | to_json }},
+        "inventory_hostname": {{ inventory_hostname | to_json }},
+        "ansible_host": {{ ansible_host | default('') | to_json }},
+        "proxmox_node": {{ proxmox_node | default('unknown') | to_json }},
+        "cpu_vcpus": {{ ansible_processor_vcpus | default(ansible_processor_count) | to_json }},
+        "memory_mb": {{ ansible_memtotal_mb | to_json }},
+        "kernel": {{ ansible_kernel | to_json }},
+        "distribution": {{ (ansible_distribution ~ ' ' ~ ansible_distribution_version) | to_json }},
+        "timestamp_utc": {{ ansible_date_time.iso8601 | to_json }}
+      }
+
+- name: Run sysbench CPU benchmark
+  ansible.builtin.command:
+    argv:
+      - sysbench
+      - cpu
+      - "--threads={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+      - "--time={{ benchmark_cpu_seconds }}"
+      - run
+  register: benchmark_cpu
+  changed_when: true
+
+- name: Store CPU benchmark output
+  ansible.builtin.copy:
+    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}/sysbench-cpu.txt"
+    owner: "{{ ansible_user | default('ubuntu') }}"
+    group: "{{ ansible_user | default('ubuntu') }}"
+    mode: "0644"
+    content: "{{ benchmark_cpu.stdout }}\n"
+
+- name: Run sysbench memory benchmark
+  ansible.builtin.command:
+    argv:
+      - sysbench
+      - memory
+      - "--threads={{ ansible_processor_vcpus | default(ansible_processor_count) }}"
+      - "--time={{ benchmark_memory_seconds }}"
+      - run
+  register: benchmark_memory
+  changed_when: true
+
+- name: Store memory benchmark output
+  ansible.builtin.copy:
+    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}/sysbench-memory.txt"
+    owner: "{{ ansible_user | default('ubuntu') }}"
+    group: "{{ ansible_user | default('ubuntu') }}"
+    mode: "0644"
+    content: "{{ benchmark_memory.stdout }}\n"
+
+- name: Run fio disk profiles
+  ansible.builtin.command:
+    argv:
+      - fio
+      - "--name={{ item.name }}"
+      - "--directory={{ benchmark_remote_dir }}/{{ benchmark_run_id }}"
+      - "--filename={{ item.name }}.fio"
+      - "--rw={{ item.rw }}"
+      - "--bs={{ item.bs }}"
+      - "--size={{ benchmark_fio_size }}"
+      - "--runtime={{ benchmark_fio_runtime }}"
+      - "--time_based=1"
+      - "--direct=1"
+      - "--ioengine=libaio"
+      - "--iodepth={{ benchmark_fio_iodepth }}"
+      - "--numjobs={{ benchmark_fio_numjobs }}"
+      - "--group_reporting=1"
+      - "--rwmixread={{ item.rwmixread | default(50) }}"
+      - "--output-format=json"
+      - "--output={{ benchmark_remote_dir }}/{{ benchmark_run_id }}/fio-{{ item.name }}.json"
+  loop: "{{ benchmark_fio_profiles }}"
+  loop_control:
+    label: "{{ item.name }}"
+  changed_when: true
+
+- name: Archive benchmark results
+  ansible.builtin.archive:
+    path: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}"
+    dest: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}-{{ inventory_hostname }}.tgz"
+    format: gz
+    mode: "0644"
+
+- name: Create local result directory
+  ansible.builtin.file:
+    path: "{{ benchmark_results_dir }}/{{ benchmark_run_id }}/{{ inventory_hostname }}"
+    state: directory
+    mode: "0755"
+  delegate_to: localhost
+  become: false
+
+- name: Fetch benchmark results
+  ansible.builtin.fetch:
+    src: "{{ benchmark_remote_dir }}/{{ benchmark_run_id }}-{{ inventory_hostname }}.tgz"
+    dest: "{{ benchmark_results_dir }}/{{ benchmark_run_id }}/{{ inventory_hostname }}/"
+    flat: true
+
+- name: Remove fio work files after collection
+  ansible.builtin.shell: "find {{ (benchmark_remote_dir ~ '/' ~ benchmark_run_id) | quote }} -type f \\( -name '*.fio' -o -name '*.fio.*' \\) -delete"
+  changed_when: true
+  when: benchmark_cleanup_workfiles | bool

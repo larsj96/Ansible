@@ -1,0 +1,35 @@
+---
+benchmark_run_id: "{{ lookup('pipe', 'date -u +%Y%m%dT%H%M%SZ') }}"
+benchmark_results_dir: "{{ playbook_dir }}/../benchmark-results"
+benchmark_remote_dir: "/var/tmp/homelab-benchmark"
+benchmark_cpu_seconds: 180
+benchmark_memory_seconds: 120
+benchmark_fio_runtime: 180
+benchmark_fio_size: "8G"
+benchmark_fio_numjobs: 4
+benchmark_fio_iodepth: 32
+benchmark_cleanup_workfiles: true
+benchmark_packages:
+  - fio
+  - jq
+  - sysbench
+  - stress-ng
+  - iperf3
+
+benchmark_fio_profiles:
+  - name: "seq-read-1m"
+    rw: "read"
+    bs: "1M"
+  - name: "seq-write-1m"
+    rw: "write"
+    bs: "1M"
+  - name: "rand-read-4k"
+    rw: "randread"
+    bs: "4k"
+  - name: "rand-write-4k"
+    rw: "randwrite"
+    bs: "4k"
+  - name: "rand-rw-4k-70r"
+    rw: "randrw"
+    bs: "4k"
+    rwmixread: 70

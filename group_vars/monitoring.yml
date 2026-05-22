@@ -52,11 +52,13 @@ monitoring_proxmox_targets:
 monitoring_snmp_enabled: true
 monitoring_snmp_community: "{{ snmp_community | default('') }}"
 # Cloudflare metrics (Prometheus exporter + Telegraf scrape)
-monitoring_cloudflare_enabled: false
+monitoring_cloudflare_enabled: true
 monitoring_cloudflare_api_token: "{{ cloudflare_api_token | default('') }}"
-monitoring_cloudflare_accounts: []
+monitoring_cloudflare_accounts:
+  - "10fe772bf2d6ab4c5ec76c0aceba8ae6"
 monitoring_cloudflare_zones: []
 monitoring_cloudflare_excluded_zones: []
+monitoring_cloudflare_free_tier: true
 # Enable only targets that are intentionally configured today. HP iLO
 # devices use the shared monitoring_snmp_community secret.
 # hp1 / 10.0.124.164 currently times out on UDP/161 and should be enabled
