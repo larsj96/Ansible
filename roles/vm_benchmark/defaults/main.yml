@@ -11,6 +11,8 @@ benchmark_fio_iodepth: 32
 benchmark_cleanup_workfiles: true
 benchmark_iperf_enabled: true
 benchmark_iperf_server: "{{ groups.get('iperf_servers', [''])[0] }}"
+benchmark_iperf_host: ""
+benchmark_iperf_manage_server: true
 benchmark_iperf_seconds: 30
 benchmark_iperf_parallel: 4
 benchmark_iperf_port: 5201

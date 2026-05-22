@@ -7,3 +7,11 @@ bench-dell1 ansible_host=10.0.0.w ansible_user=ubuntu proxmox_node=dell1 proxmox
 
 [iperf_servers]
 bench-hp1
+
+# Optional WAN/VPN baseline. The Frankfurt VPS now runs a persistent iperf3
+# server on TCP/5201, so you can keep the [iperf_servers] group above and
+# override the target without SSH-managing the VPS:
+#
+# ansible-playbook -i inventory/benchmarks.ini playbooks/benchmarks.yml \
+#   -e benchmark_iperf_host=72.61.95.150 \
+#   -e benchmark_iperf_manage_server=false

@@ -85,6 +85,7 @@
   failed_when: false
   when:
     - benchmark_iperf_enabled | bool
+    - benchmark_iperf_manage_server | bool
     - benchmark_iperf_server | length > 0
 
 - name: Start iperf3 server
@@ -101,6 +102,7 @@
   changed_when: true
   when:
     - benchmark_iperf_enabled | bool
+    - benchmark_iperf_manage_server | bool
     - benchmark_iperf_server | length > 0
 
 - name: Run iperf3 network benchmark
@@ -108,7 +110,7 @@
     argv:
       - iperf3
       - --client
-      - "{{ hostvars[benchmark_iperf_server].ansible_host | default(benchmark_iperf_server) }}"
+      - "{{ benchmark_iperf_host if (benchmark_iperf_host | length > 0) else (hostvars[benchmark_iperf_server].ansible_host | default(benchmark_iperf_server)) }}"
       - --time
       - "{{ benchmark_iperf_seconds }}"
       - --parallel
@@ -121,8 +123,8 @@
   changed_when: true
   when:
     - benchmark_iperf_enabled | bool
-    - benchmark_iperf_server | length > 0
-    - inventory_hostname != benchmark_iperf_server
+    - (benchmark_iperf_host | length > 0) or (benchmark_iperf_server | length > 0)
+    - (benchmark_iperf_host | length > 0) or inventory_hostname != benchmark_iperf_server
 
 - name: Store iperf3 benchmark output
   ansible.builtin.copy:
@@ -148,6 +150,7 @@
   failed_when: false
   when:
     - benchmark_iperf_enabled | bool
+    - benchmark_iperf_manage_server | bool
     - benchmark_iperf_server | length > 0
 
 - name: Run fio disk profiles

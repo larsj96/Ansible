@@ -3,6 +3,7 @@
   ansible.builtin.apt:
     name:
       - nfs-common
+      - e2fsprogs
     state: present
     update_cache: true
 
@@ -10,7 +11,7 @@
   ansible.builtin.assert:
     that:
       - media_nfs_src | length > 0
-    fail_msg: "Set media_nfs_src before enabling the HP2 SAS media NFS mount."
+    fail_msg: "Set media_nfs_src before enabling the media NFS mount."
   when: media_nfs_enabled | bool
 
 - name: Create media stack directories
@@ -27,9 +28,15 @@
     - "{{ media_config_dir }}/sonarr"
     - "{{ media_config_dir }}/radarr"
     - "{{ media_config_dir }}/prowlarr"
+    - "{{ media_config_dir }}/jackett"
     - "{{ media_config_dir }}/qbittorrent"
+    - "{{ media_config_dir }}/deluge"
     - "{{ media_config_dir }}/overseerr"
+    - "{{ media_config_dir }}/ombi"
+    - "{{ media_config_dir }}/unpackerr"
     - "{{ media_downloads_dir }}"
+    - "{{ media_completed_downloads_dir }}"
+    - "{{ media_incomplete_downloads_dir }}"
 
 - name: Ensure media library mount point exists
   ansible.builtin.file:
@@ -48,6 +55,47 @@
     state: mounted
   when: media_nfs_enabled | bool
 
+- name: Wait for media data disk
+  ansible.builtin.stat:
+    path: "{{ media_data_disk_device }}"
+  register: media_data_disk_stat
+  retries: 12
+  delay: 5
+  until: media_data_disk_stat.stat.exists
+  when: media_data_disk_enabled | bool
+
+- name: Check media data disk filesystem
+  ansible.builtin.command:
+    cmd: "blkid -o value -s TYPE {{ media_data_disk_device }}"
+  register: media_data_disk_blkid
+  changed_when: false
+  failed_when: false
+  when: media_data_disk_enabled | bool
+
+- name: Create filesystem on media data disk
+  ansible.builtin.command:
+    cmd: "mkfs.{{ media_data_disk_fstype }} -F {{ media_data_disk_device }}"
+  changed_when: true
+  when:
+    - media_data_disk_enabled | bool
+    - media_data_disk_blkid.rc != 0
+
+- name: Read media data disk UUID
+  ansible.builtin.command:
+    cmd: "blkid -o value -s UUID {{ media_data_disk_device }}"
+  register: media_data_disk_uuid
+  changed_when: false
+  when: media_data_disk_enabled | bool
+
+- name: Mount local media data disk when enabled
+  ansible.posix.mount:
+    path: "{{ media_library_dir }}"
+    src: "UUID={{ media_data_disk_uuid.stdout }}"
+    fstype: "{{ media_data_disk_fstype }}"
+    opts: "{{ media_data_disk_mount_opts }}"
+    state: mounted
+  when: media_data_disk_enabled | bool
+
 - name: Create media library directories
   ansible.builtin.file:
     path: "{{ item }}"
@@ -59,7 +107,7 @@
     - "{{ media_library_dir }}"
     - "{{ media_movies_dir }}"
     - "{{ media_tv_dir }}"
-  when: media_create_local_library_dirs | bool or media_nfs_enabled | bool
+  when: media_create_local_library_dirs | bool or media_nfs_enabled | bool or media_data_disk_enabled | bool
 
 - name: Install media compose file
   ansible.builtin.template:

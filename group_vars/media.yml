@@ -9,11 +9,20 @@ media_downloads_dir: "{{ media_stack_dir }}/downloads"
 media_library_dir: "/mnt/media"
 media_movies_dir: "{{ media_library_dir }}/movies"
 media_tv_dir: "{{ media_library_dir }}/tv"
+media_completed_downloads_dir: "{{ media_downloads_dir }}/completed"
+media_incomplete_downloads_dir: "{{ media_downloads_dir }}/incomplete"
 
 media_create_local_library_dirs: true
 media_nfs_enabled: false
 media_nfs_src: ""
 media_nfs_opts: "rw,nofail,x-systemd.automount,_netdev"
+media_data_disk_enabled: true
+media_data_disk_device: "/dev/disk/by-id/scsi-0QEMU_QEMU_HARDDISK_drive-scsi1"
+media_data_disk_fstype: "ext4"
+media_data_disk_mount_opts: "defaults,nofail"
 
 plex_advertise_url: "http://10.0.0.39:32400"
 qbittorrent_webui_port: 8080
+deluge_webui_port: 8112
+deluge_daemon_port: 58846
+deluge_incoming_port: 58946
