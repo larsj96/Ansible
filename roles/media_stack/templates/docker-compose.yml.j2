@@ -142,10 +142,14 @@ services:
     user: "${PUID}:${PGID}"
     environment:
       TZ: "${TZ}"
+{% if (unpackerr_sonarr_api_key | default('') | length) == 32 %}
       UN_SONARR_0_URL: "http://sonarr:8989"
       UN_SONARR_0_API_KEY: "${UNPACKERR_SONARR_API_KEY}"
+{% endif %}
+{% if (unpackerr_radarr_api_key | default('') | length) == 32 %}
       UN_RADARR_0_URL: "http://radarr:7878"
       UN_RADARR_0_API_KEY: "${UNPACKERR_RADARR_API_KEY}"
+{% endif %}
       UN_FOLDER_0_PATH: "/downloads"
       UN_FOLDER_0_EXTRACT_PATH: "/downloads/completed"
       UN_FOLDER_0_DELETE_ORIGINAL: "false"
