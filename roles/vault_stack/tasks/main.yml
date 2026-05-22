@@ -1,0 +1,149 @@
+---
+- name: Create Vault directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ vault_stack_dir }}", mode: "0750" }
+    - { path: "{{ vault_stack_dir }}/config", mode: "0755" }
+    - { path: "{{ vault_stack_dir }}/data", mode: "0750" }
+    - { path: "{{ vault_stack_dir }}/logs", mode: "0750" }
+    - { path: "{{ vault_stack_dir }}/init", mode: "0700" }
+    - { path: "{{ vault_stack_dir }}/policies", mode: "0755" }
+
+- name: Ensure Vault data directory is writable by Vault container user
+  ansible.builtin.file:
+    path: "{{ vault_stack_dir }}/data"
+    state: directory
+    owner: "100"
+    group: "100"
+    mode: "0750"
+
+- name: Install Vault config
+  ansible.builtin.template:
+    src: vault.hcl.j2
+    dest: "{{ vault_stack_dir }}/config/vault.hcl"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Vault compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ vault_stack_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Install Vault bootstrap policy
+  ansible.builtin.template:
+    src: homelab-automation.hcl.j2
+    dest: "{{ vault_stack_dir }}/policies/{{ vault_bootstrap_policy_name }}.hcl"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Start Vault
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ vault_stack_dir }}"
+  changed_when: true
+
+- name: Wait for Vault API
+  ansible.builtin.uri:
+    url: "{{ vault_addr }}/v1/sys/health"
+    method: GET
+    status_code: [200, 429, 472, 473, 501, 503]
+  register: vault_health
+  retries: 30
+  delay: 2
+  until: vault_health.status in [200, 429, 472, 473, 501, 503]
+
+- name: Check Vault initialization state
+  ansible.builtin.command:
+    cmd: docker exec vault vault status -format=json
+  register: vault_status_raw
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Parse Vault status
+  ansible.builtin.set_fact:
+    vault_status: "{{ vault_status_raw.stdout | from_json }}"
+  when: vault_status_raw.stdout | length > 0
+  no_log: true
+
+- name: Initialize Vault
+  ansible.builtin.command:
+    cmd: >-
+      docker exec vault vault operator init
+      -key-shares={{ vault_unseal_key_shares }}
+      -key-threshold={{ vault_unseal_key_threshold }}
+      -format=json
+  register: vault_init_raw
+  changed_when: true
+  when: vault_status is not defined or not vault_status.initialized
+  no_log: true
+
+- name: Save Vault init material on target host
+  ansible.builtin.copy:
+    dest: "{{ vault_stack_dir }}/init/vault-init.json"
+    owner: root
+    group: root
+    mode: "0600"
+    content: "{{ vault_init_raw.stdout }}\n"
+  when: vault_init_raw is defined and vault_init_raw.changed
+  no_log: true
+
+- name: Load saved Vault init material
+  ansible.builtin.slurp:
+    src: "{{ vault_stack_dir }}/init/vault-init.json"
+  register: vault_init_saved
+  no_log: true
+
+- name: Parse saved Vault init material
+  ansible.builtin.set_fact:
+    vault_init: "{{ vault_init_saved.content | b64decode | from_json }}"
+  no_log: true
+
+- name: Recheck Vault status after init
+  ansible.builtin.command:
+    cmd: docker exec vault vault status -format=json
+  register: vault_status_after_init_raw
+  changed_when: false
+  failed_when: false
+  no_log: true
+
+- name: Parse Vault status after init
+  ansible.builtin.set_fact:
+    vault_status_after_init: "{{ vault_status_after_init_raw.stdout | from_json }}"
+  when: vault_status_after_init_raw.stdout | length > 0
+  no_log: true
+
+- name: Unseal Vault with threshold keys
+  ansible.builtin.command:
+    cmd: "docker exec vault vault operator unseal {{ item }}"
+  loop: "{{ vault_init.unseal_keys_b64[:vault_unseal_key_threshold] }}"
+  when: vault_status_after_init is defined and vault_status_after_init.sealed
+  changed_when: true
+  no_log: true
+
+- name: Enable homelab KV v2 secrets mount
+  ansible.builtin.command:
+    cmd: "docker exec -e VAULT_TOKEN={{ vault_init.root_token }} vault vault secrets enable -path={{ vault_bootstrap_kv_mount }} kv-v2"
+  register: vault_kv_enable
+  changed_when: "'Success!' in vault_kv_enable.stdout"
+  failed_when:
+    - vault_kv_enable.rc != 0
+    - "'path is already in use' not in vault_kv_enable.stderr"
+  no_log: true
+
+- name: Install homelab automation policy
+  ansible.builtin.command:
+    cmd: "docker exec -e VAULT_TOKEN={{ vault_init.root_token }} vault vault policy write {{ vault_bootstrap_policy_name }} /vault/policies/{{ vault_bootstrap_policy_name }}.hcl"
+  register: vault_policy_write
+  changed_when: "'Success!' in vault_policy_write.stdout"
+  no_log: true

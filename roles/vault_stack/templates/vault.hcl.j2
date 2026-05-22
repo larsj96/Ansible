@@ -1,0 +1,15 @@
+ui = true
+disable_mlock = true
+
+api_addr = "{{ vault_api_addr }}"
+cluster_addr = "{{ vault_cluster_addr }}"
+
+listener "tcp" {
+  address     = "0.0.0.0:8200"
+  tls_disable = true
+}
+
+storage "raft" {
+  path    = "/vault/data"
+  node_id = "{{ vault_node_id }}"
+}

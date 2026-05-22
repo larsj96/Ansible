@@ -1,0 +1,11 @@
+---
+vault_stack_dir: "/opt/vault"
+vault_addr: "http://127.0.0.1:8200"
+vault_api_addr: "{{ vault_addr }}"
+vault_cluster_addr: "http://127.0.0.1:8201"
+vault_node_id: "{{ inventory_hostname }}-vault"
+vault_image: "hashicorp/vault:1.18"
+vault_unseal_key_shares: 5
+vault_unseal_key_threshold: 3
+vault_bootstrap_kv_mount: "homelab"
+vault_bootstrap_policy_name: "homelab-automation"

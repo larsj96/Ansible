@@ -1,0 +1,7 @@
+path "{{ vault_bootstrap_kv_mount }}/data/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}
+
+path "{{ vault_bootstrap_kv_mount }}/metadata/*" {
+  capabilities = ["create", "read", "update", "delete", "list"]
+}

@@ -9,20 +9,23 @@ Homelab configuration management. Terraform creates infrastructure; Ansible conf
 Bootstrap Ansible on bastion:
 
 ```bash
-ssh ubuntu@10.0.0.99
+ssh ubuntu@10.0.0.102
 sudo apt update
 sudo apt install -y ansible git
 git clone https://github.com/larsj96/Ansible.git ansible-homelab
 cd ansible-homelab
 ```
 
-Known DHCP mapping:
+Known mapping:
 
 ```text
-docker1: 10.0.0.35
-mkdocs: 10.0.0.37
+bastion01: 10.0.0.102
+mkdocs: 10.0.0.35
+docker1: 10.0.0.37
 monitoring1: 10.0.0.38
-media1: planned 10.0.0.39
+media1: 10.0.0.39
+mgmt1: 10.0.0.100
+runner1: 10.0.0.101
 ```
 
 MkDocs variables are set directly in `playbooks/mkdocs.yml` for the first deployment, with the same values also present in `roles/mkdocs/defaults/main.yml` for later reuse.
@@ -36,8 +39,34 @@ ansible-playbook playbooks/mkdocs.yml
 Then test:
 
 ```bash
-curl -I http://10.0.0.37/
+curl -I http://10.0.0.35/
 ```
+
+## Vault
+
+`docker1` runs the internal HashiCorp Vault service for automation secrets. It is not exposed through Cloudflare.
+
+Live endpoint:
+
+```text
+http://10.0.0.37:8200
+```
+
+Deploy or reconcile from bastion:
+
+```bash
+ansible-playbook playbooks/vault.yml
+```
+
+The playbook creates `/opt/vault`, starts Vault with Docker Compose, initializes it once, unseals it, enables the `homelab` KV v2 mount, and installs the `homelab-automation` policy.
+
+The first initialization material is stored only on `docker1`:
+
+```text
+/opt/vault/init/vault-init.json
+```
+
+That file contains the unseal keys and initial root token. Copy the unseal keys to Bitwarden/Vaultwarden for break-glass recovery. Do not commit it and do not paste it into chat.
 
 ## Monitoring
 
@@ -63,6 +92,33 @@ ansible-playbook playbooks/monitoring.yml --ask-vault-pass
 ```
 
 When Terraform creates a new Ubuntu VM, add it to `[telegraf_agents]` in `inventory/homelab.ini`, then rerun the monitoring playbook.
+
+Palo Alto SNMP polling is scaffolded but disabled by default. See `docs/palo-alto-snmp-monitoring.md` before enabling it; SNMPv3 credentials belong in the vaulted monitoring secrets file.
+
+## Management Workbench
+
+`mgmt1` is the inside Linux desktop/workbench for browser-based admin access. It runs Docker, Terraform, VS Code, code-server, and a web desktop with Firefox and Remmina/FreeRDP for reaching Windows RDP machines from inside the homelab.
+
+Terraform creates `mgmt1` at `10.0.0.100` and `runner1` at `10.0.0.101`. Both belong in `[telegraf_agents]` so the monitoring playbook installs host metrics automatically.
+
+After the Cloudflare tunnel stack has created `homelab-mgmt`, deploy the workbench from bastion:
+
+```bash
+ansible-playbook playbooks/mgmt.yml \
+  -e "cloudflared_token=$(terraform -chdir=/path/to/docs-tunnel output -raw mgmt_cloudflared_tunnel_token)"
+```
+
+The generated local web credentials are stored on bastion under `~/.ansible/secrets/` and written on `mgmt1` to:
+
+```text
+/opt/mgmt-workbench/credentials.txt
+```
+
+Deploy the runner host:
+
+```bash
+ansible-playbook playbooks/runners.yml
+```
 
 ## Media
 

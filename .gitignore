@@ -1,4 +1,5 @@
 group_vars/*_secrets.yml
+group_vars/monitoring/secrets.yml
 group_vars/monitoring_secrets.yml
 group_vars/media_secrets.yml
 *.retry

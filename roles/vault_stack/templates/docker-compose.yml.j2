@@ -1,0 +1,17 @@
+services:
+  vault:
+    image: "{{ vault_image }}"
+    container_name: vault
+    restart: unless-stopped
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_ADDR: "http://127.0.0.1:8200"
+    command: "vault server -config=/vault/config/vault.hcl"
+    ports:
+      - "8200:8200"
+    volumes:
+      - ./config:/vault/config
+      - ./policies:/vault/policies
+      - ./data:/vault/data
+      - ./logs:/vault/logs

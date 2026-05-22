@@ -1,0 +1,9 @@
+---
+- name: Deploy internal HashiCorp Vault
+  hosts: vault
+  become: true
+  vars_files:
+    - ../group_vars/vault.yml
+  roles:
+    - docker_host
+    - vault_stack
