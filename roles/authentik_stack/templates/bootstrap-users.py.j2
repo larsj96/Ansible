@@ -1,0 +1,34 @@
+from authentik.core.models import Group, User
+
+groups = {{ authentik_local_groups | to_json }}
+users = {{ authentik_managed_users | to_json }}
+reset_passwords = {{ authentik_reset_managed_user_passwords | bool | ternary('True', 'False') }}
+
+for group_name in groups:
+    Group.objects.get_or_create(name=group_name)
+
+for item in users:
+    user, created = User.objects.get_or_create(
+        username=item["username"],
+        defaults={
+            "email": item["email"],
+            "name": item["name"],
+            "type": "internal",
+            "path": "users",
+            "is_active": True,
+        },
+    )
+    user.email = item["email"]
+    user.name = item["name"]
+    user.type = "internal"
+    user.path = "users"
+    user.is_active = True
+    if created or reset_passwords:
+        user.set_password(item["password"])
+    user.save()
+
+    for group_name in item.get("groups", []):
+        group, _ = Group.objects.get_or_create(name=group_name)
+        user.groups.add(group)
+
+print("managed users:", [item["username"] for item in users])
