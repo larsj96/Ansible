@@ -15,6 +15,12 @@
     authentik_bootstrap_token: "{{ lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-akadmin-token chars=ascii_letters,digits length=64') }}"
   no_log: true
 
+- name: Generate or load Authentik managed user passwords
+  ansible.builtin.set_fact:
+    authentik_managed_users: "{{ (authentik_managed_users | default([])) + [item | combine({'password': lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-' ~ item.username ~ '-password chars=ascii_letters,digits length=32')})] }}"
+  loop: "{{ authentik_local_users }}"
+  no_log: true
+
 - name: Create Authentik directories
   ansible.builtin.file:
     path: "{{ item.path }}"
@@ -56,6 +62,15 @@
     mode: "0600"
   no_log: true
 
+- name: Install Authentik managed users bootstrap script
+  ansible.builtin.template:
+    src: bootstrap-users.py.j2
+    dest: "{{ authentik_stack_dir }}/bootstrap-users.py"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
 - name: Start Authentik
   ansible.builtin.command:
     cmd: docker compose up -d
@@ -73,9 +88,17 @@
   delay: 5
   until: authentik_http.status in [200, 302, 403]
 
+- name: Bootstrap Authentik local groups and users
+  ansible.builtin.shell:
+    cmd: docker compose exec -T server ak shell < bootstrap-users.py
+    chdir: "{{ authentik_stack_dir }}"
+  changed_when: "'managed users:' in authentik_user_bootstrap.stdout"
+  register: authentik_user_bootstrap
+  no_log: true
+
 - name: Show Authentik endpoint summary
   ansible.builtin.debug:
     msg:
       - "Authentik internal URL: http://{{ ansible_host }}:{{ authentik_listen_http }}"
       - "Authentik public URL: {{ authentik_public_url }}"
-      - "Bootstrap credentials are stored on the control host under {{ authentik_secret_dir }} and on auth1 at {{ authentik_stack_dir }}/credentials.txt."
+      - "Bootstrap and managed user credentials are stored on the control host under {{ authentik_secret_dir }} and on auth1 at {{ authentik_stack_dir }}/credentials.txt."

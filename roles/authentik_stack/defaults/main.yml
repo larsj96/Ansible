@@ -7,3 +7,28 @@ authentik_listen_http: "9000"
 authentik_listen_https: "9443"
 authentik_secret_dir: "{{ lookup('env', 'HOME') }}/.ansible/secrets"
 authentik_secret_prefix: "homelab-authentik"
+authentik_trusted_proxy_cidrs:
+  - "127.0.0.0/8"
+  - "10.0.0.0/8"
+  - "172.16.0.0/12"
+  - "192.168.0.0/16"
+  - "fe80::/10"
+  - "::1/128"
+authentik_local_groups:
+  - homelab-admins
+  - homelab-users
+  - homelab-friends
+authentik_local_users:
+  - username: larsj96
+    email: larsj96@gmail.com
+    name: Lars Nilsen
+    groups:
+      - homelab-admins
+      - homelab-users
+      - authentik Admins
+  - username: jaguni
+    email: jaguni@gmail.com
+    name: Jaguni
+    groups:
+      - homelab-users
+authentik_reset_managed_user_passwords: false
