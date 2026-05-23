@@ -1,0 +1,81 @@
+---
+- name: Ensure local Ansible secret directory exists
+  ansible.builtin.file:
+    path: "{{ authentik_secret_dir }}"
+    state: directory
+    mode: "0700"
+  delegate_to: localhost
+  become: false
+
+- name: Generate or load Authentik bootstrap secrets
+  ansible.builtin.set_fact:
+    authentik_postgres_password: "{{ lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-postgres chars=ascii_letters,digits length=48') }}"
+    authentik_secret_key: "{{ lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-secret-key chars=ascii_letters,digits length=64') }}"
+    authentik_bootstrap_password: "{{ lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-akadmin-password chars=ascii_letters,digits length=32') }}"
+    authentik_bootstrap_token: "{{ lookup('ansible.builtin.password', authentik_secret_dir ~ '/' ~ authentik_secret_prefix ~ '-akadmin-token chars=ascii_letters,digits length=64') }}"
+  no_log: true
+
+- name: Create Authentik directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { path: "{{ authentik_stack_dir }}", mode: "0750" }
+    - { path: "{{ authentik_stack_dir }}/media", mode: "0755" }
+    - { path: "{{ authentik_stack_dir }}/custom-templates", mode: "0750" }
+    - { path: "{{ authentik_stack_dir }}/certs", mode: "0755" }
+    - { path: "{{ authentik_stack_dir }}/postgres", owner: "70", group: "70", mode: "0700" }
+    - { path: "{{ authentik_stack_dir }}/redis", owner: "999", group: "999", mode: "0700" }
+
+- name: Install Authentik environment file
+  ansible.builtin.template:
+    src: authentik.env.j2
+    dest: "{{ authentik_stack_dir }}/.env"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Install Authentik compose file
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ authentik_stack_dir }}/docker-compose.yml"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Write local bootstrap credential note on target
+  ansible.builtin.template:
+    src: credentials.txt.j2
+    dest: "{{ authentik_stack_dir }}/credentials.txt"
+    owner: root
+    group: root
+    mode: "0600"
+  no_log: true
+
+- name: Start Authentik
+  ansible.builtin.command:
+    cmd: docker compose up -d
+    chdir: "{{ authentik_stack_dir }}"
+  changed_when: true
+  no_log: true
+
+- name: Wait for Authentik HTTP endpoint
+  ansible.builtin.uri:
+    url: "http://127.0.0.1:{{ authentik_listen_http }}/"
+    method: GET
+    status_code: [200, 302, 403]
+  register: authentik_http
+  retries: 60
+  delay: 5
+  until: authentik_http.status in [200, 302, 403]
+
+- name: Show Authentik endpoint summary
+  ansible.builtin.debug:
+    msg:
+      - "Authentik internal URL: http://{{ ansible_host }}:{{ authentik_listen_http }}"
+      - "Authentik public URL: {{ authentik_public_url }}"
+      - "Bootstrap credentials are stored on the control host under {{ authentik_secret_dir }} and on auth1 at {{ authentik_stack_dir }}/credentials.txt."

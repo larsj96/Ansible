@@ -1,0 +1,9 @@
+---
+- name: Deploy Authentik identity provider
+  hosts: identity
+  become: true
+  vars_files:
+    - ../group_vars/authentik.yml
+  roles:
+    - docker_host
+    - authentik_stack

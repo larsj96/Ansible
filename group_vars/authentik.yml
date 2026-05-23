@@ -1,0 +1,9 @@
+---
+authentik_stack_dir: "/opt/authentik"
+authentik_version: "2026.2.2"
+authentik_public_url: "https://auth.lanilsen.com"
+authentik_bootstrap_email: "larsj96@gmail.com"
+authentik_listen_http: "9000"
+authentik_listen_https: "9443"
+authentik_secret_dir: "{{ lookup('env', 'HOME') }}/.ansible/secrets"
+authentik_secret_prefix: "homelab-authentik"

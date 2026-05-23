@@ -2,14 +2,14 @@
 
 Homelab configuration management. Terraform creates infrastructure; Ansible configures the operating system and services inside VMs.
 
-## Run From Bastion
+## Run From Mgmt Machine
 
-`bastion01` has SSH access to new Ubuntu VMs and is the preferred control host for internal-only services.
+`mgmt1` is the preferred control host/workbench for normal Ansible and Terraform operations inside the homelab. Use `bastion01` as a jump or recovery host, not the default place to run routine playbooks.
 
-Bootstrap Ansible on bastion:
+Bootstrap Ansible on `mgmt1`:
 
 ```bash
-ssh ubuntu@10.0.0.102
+ssh ubuntu@10.0.0.100
 sudo apt update
 sudo apt install -y ansible git
 git clone https://github.com/larsj96/Ansible.git ansible-homelab
@@ -24,6 +24,7 @@ mkdocs: 10.0.0.35
 docker1: 10.0.0.37
 monitoring1: 10.0.0.38
 media1: 10.0.0.39
+auth1: 10.0.0.36
 mgmt1: 10.0.0.100
 runner1: 10.0.0.101
 ```
@@ -52,7 +53,7 @@ Live endpoint:
 http://10.0.0.37:8200
 ```
 
-Deploy or reconcile from bastion:
+Deploy or reconcile from `mgmt1`:
 
 ```bash
 ansible-playbook playbooks/vault.yml
@@ -67,6 +68,37 @@ The first initialization material is stored only on `docker1`:
 ```
 
 That file contains the unseal keys and initial root token. Copy the unseal keys to Bitwarden/Vaultwarden for break-glass recovery. Do not commit it and do not paste it into chat.
+
+## Identity And SSO
+
+`auth1` runs Authentik for central SSO and MFA.
+
+Live endpoints:
+
+```text
+internal: http://10.0.0.36:9000
+public:   https://auth.lanilsen.com
+```
+
+Deploy or reconcile from `mgmt1` or `bastion01`:
+
+```bash
+ansible-playbook playbooks/authentik.yml
+```
+
+The playbook generates the first `akadmin` password, bootstrap API token, PostgreSQL password, and Authentik secret key under:
+
+```text
+~/.ansible/secrets/
+```
+
+It also writes a root-only recovery copy on `auth1`:
+
+```text
+/opt/authentik/credentials.txt
+```
+
+After first login, enable TOTP enrollment/validation in Authentik and require it for the VPN user/group before wiring Palo Alto GlobalProtect SAML to Authentik. Google Authenticator works because this is standards-based TOTP.
 
 ## Monitoring
 
@@ -88,7 +120,7 @@ ansible-vault encrypt group_vars/monitoring_secrets.yml
 
 Generated monitoring passwords/tokens should remain in Vault and can be mirrored into Vaultwarden for break-glass recovery.
 
-Deploy from bastion:
+Deploy from `mgmt1`:
 
 ```bash
 ansible-playbook playbooks/monitoring.yml --ask-vault-pass
@@ -134,14 +166,14 @@ References:
 
 Terraform creates `mgmt1` at `10.0.0.100` and `runner1` at `10.0.0.101`. Both belong in `[telegraf_agents]` so the monitoring playbook installs host metrics automatically.
 
-After the Cloudflare tunnel stack has created `homelab-mgmt`, deploy the workbench from bastion:
+After the Cloudflare tunnel stack has created `homelab-mgmt`, reconcile the workbench from `mgmt1` once it is bootstrapped. The initial bootstrap can still be run from another trusted control host if `mgmt1` is not ready yet:
 
 ```bash
 ansible-playbook playbooks/mgmt.yml \
   -e "cloudflared_token=$(terraform -chdir=/path/to/docs-tunnel output -raw mgmt_cloudflared_tunnel_token)"
 ```
 
-The generated local web credentials are stored on bastion under `~/.ansible/secrets/` and written on `mgmt1` to:
+The generated local web credentials are stored on the control host under `~/.ansible/secrets/` and written on `mgmt1` to:
 
 ```text
 /opt/mgmt-workbench/credentials.txt
@@ -179,7 +211,7 @@ cp group_vars/media_secrets.yml.example group_vars/media_secrets.yml
 ansible-vault encrypt group_vars/media_secrets.yml
 ```
 
-Deploy from bastion:
+Deploy from `mgmt1`:
 
 ```bash
 ansible-playbook playbooks/media.yml --ask-vault-pass
