@@ -1,0 +1,29 @@
+# Managed by Ansible. Receives firewall/network syslog and forwards to Logstash.
+{% if syslog_forwarder_listen_udp | bool %}
+module(load="imudp")
+input(type="imudp" port="{{ syslog_forwarder_port }}" ruleset="remote_syslog")
+{% endif %}
+{% if syslog_forwarder_listen_tcp | bool %}
+module(load="imtcp")
+input(type="imtcp" port="{{ syslog_forwarder_port }}" ruleset="remote_syslog")
+{% endif %}
+
+template(name="RemotePerHostFile" type="string"
+         string="{{ syslog_forwarder_remote_log_dir }}/%fromhost-ip%/%$year%-%$month%-%$day%.log")
+
+ruleset(name="remote_syslog") {
+  action(type="omfile" dynaFile="RemotePerHostFile" createDirs="on" dirCreateMode="0750" fileCreateMode="0640")
+
+  action(
+    type="omfwd"
+    target="{{ syslog_forwarder_logstash_host }}"
+    port="{{ syslog_forwarder_logstash_port }}"
+    protocol="tcp"
+    template="RSYSLOG_SyslogProtocol23Format"
+    action.resumeRetryCount="-1"
+    queue.type="LinkedList"
+    queue.filename="logstash-forward"
+    queue.maxdiskspace="2g"
+    queue.saveonshutdown="on"
+  )
+}

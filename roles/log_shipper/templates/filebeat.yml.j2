@@ -1,5 +1,12 @@
 ---
 filebeat.inputs:
+{% if log_shipper_journald_enabled | bool %}
+  - type: journald
+    enabled: true
+    id: "homelab-journald"
+    tags: ["linux", "journald"]
+{% endif %}
+
   - type: filestream
     enabled: {{ log_shipper_system_logs_enabled | bool | lower }}
     id: "homelab-system"
@@ -22,6 +29,42 @@ filebeat.inputs:
     tags: ["linux", "kernel"]
 {% endif %}
 
+{% if log_shipper_package_logs_enabled | bool %}
+  - type: filestream
+    enabled: true
+    id: "homelab-packages"
+    paths:
+{% for path in log_shipper_package_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "packages"]
+{% endif %}
+
+{% if log_shipper_cloudinit_logs_enabled | bool %}
+  - type: filestream
+    enabled: true
+    id: "homelab-cloudinit"
+    paths:
+{% for path in log_shipper_cloudinit_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "cloud-init"]
+{% endif %}
+
+{% if log_shipper_service_logs_enabled | bool %}
+  - type: filestream
+    enabled: true
+    id: "homelab-services"
+    paths:
+{% for path in log_shipper_service_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "services"]
+{% endif %}
+
 {% if log_shipper_audit_logs_enabled | bool %}
   - type: filestream
     enabled: true
@@ -33,14 +76,32 @@ filebeat.inputs:
     tags: ["linux", "audit"]
 {% endif %}
 
+{% if log_shipper_extra_log_files | length > 0 %}
+  - type: filestream
+    enabled: true
+    id: "homelab-extra"
+    paths:
+{% for path in log_shipper_extra_log_files %}
+      - {{ path }}
+{% endfor %}
+    exclude_files: ['.gz$']
+    tags: ["linux", "extra"]
+{% endif %}
+
 processors:
   - add_host_metadata: {}
   - add_cloud_metadata: {}
+  - add_process_metadata:
+      match_pids: ["process.pid"]
+      target: process
+      ignore_missing: true
   - add_fields:
       target: ""
       fields:
         deployment: homelab
         service: filebeat
+        ansible_host: "{{ inventory_hostname }}"
+        ansible_groups: {{ group_names | to_json }}
 
 output.logstash:
   hosts: {{ log_shipper_logstash_hosts | to_json }}

@@ -1,0 +1,38 @@
+---
+- name: Install rsyslog forwarder packages
+  ansible.builtin.apt:
+    name:
+      - rsyslog
+      - rsyslog-gnutls
+    state: present
+    update_cache: true
+  when: syslog_forwarder_enabled | bool
+
+- name: Create rsyslog spool and remote log directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: adm
+    mode: "0750"
+  loop:
+    - "{{ syslog_forwarder_work_dir }}"
+    - "{{ syslog_forwarder_remote_log_dir }}"
+  when: syslog_forwarder_enabled | bool
+
+- name: Configure homelab rsyslog forwarder
+  ansible.builtin.template:
+    src: homelab-forwarder.conf.j2
+    dest: /etc/rsyslog.d/20-homelab-forwarder.conf
+    owner: root
+    group: root
+    mode: "0644"
+  when: syslog_forwarder_enabled | bool
+  notify: Restart rsyslog
+
+- name: Ensure rsyslog is enabled and running
+  ansible.builtin.systemd:
+    name: rsyslog
+    state: started
+    enabled: true
+  when: syslog_forwarder_enabled | bool

@@ -13,12 +13,36 @@ log_shipper_logstash_hosts:
 log_shipper_system_logs_enabled: true
 log_shipper_audit_logs_enabled: true
 log_shipper_kern_log_enabled: true
+log_shipper_journald_enabled: true
+log_shipper_package_logs_enabled: true
+log_shipper_cloudinit_logs_enabled: true
+log_shipper_service_logs_enabled: true
 log_shipper_log_files:
   - "/var/log/syslog"
   - "/var/log/auth.log"
+  - "/var/log/daemon.log"
+  - "/var/log/user.log"
+  - "/var/log/cron.log"
 
 log_shipper_audit_log_files:
   - "/var/log/audit/audit.log"
 
 log_shipper_kernel_log_files:
   - "/var/log/kern.log"
+
+log_shipper_package_log_files:
+  - "/var/log/dpkg.log"
+  - "/var/log/apt/history.log"
+  - "/var/log/apt/term.log"
+  - "/var/log/unattended-upgrades/unattended-upgrades.log"
+
+log_shipper_cloudinit_log_files:
+  - "/var/log/cloud-init.log"
+  - "/var/log/cloud-init-output.log"
+
+log_shipper_service_log_files:
+  - "/var/log/nginx/*.log"
+  - "/var/log/docker.log"
+  - "/var/lib/docker/containers/*/*.log"
+
+log_shipper_extra_log_files: []

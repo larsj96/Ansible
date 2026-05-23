@@ -1,0 +1,6 @@
+---
+- name: Configure central syslog forwarder
+  hosts: syslog_forwarders
+  become: true
+  roles:
+    - syslog_forwarder
