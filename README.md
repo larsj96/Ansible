@@ -96,7 +96,7 @@ ansible-playbook playbooks/monitoring.yml --ask-vault-pass
 
 When Terraform creates a new Ubuntu VM, add it to `[telegraf_agents]` in `inventory/homelab.ini`, then rerun the monitoring playbook.
 
-HP iLO SNMP polling is enabled for `ilo-hp2` (`10.0.124.165`) and `ilo-hp3` (`10.0.124.163`) through `monitoring_snmp_targets`. `ilo-hp1` (`10.0.124.164`) is documented as pending because it currently times out on UDP/161.
+HP iLO SNMP polling is enabled for `ilo-hp1` (`10.0.124.164`), `ilo-hp2` (`10.0.124.165`), and `ilo-hp3` (`10.0.124.163`) through `monitoring_snmp_targets`.
 
 Palo Alto SNMP polling is enabled against `10.1.1.3`. SNMP was explicitly enabled on the Palo management-plane service on `2026-05-22`; credentials belong in the vaulted monitoring secrets file.
 

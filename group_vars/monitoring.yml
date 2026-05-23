@@ -59,11 +59,11 @@ monitoring_cloudflare_accounts:
 monitoring_cloudflare_zones: []
 monitoring_cloudflare_excluded_zones: []
 monitoring_cloudflare_free_tier: true
-# Enable only targets that are intentionally configured today. HP iLO
-# devices use the shared monitoring_snmp_community secret.
-# hp1 / 10.0.124.164 currently times out on UDP/161 and should be enabled
-# here after iLO SNMP is fixed on that device.
+# HP iLO devices use the shared monitoring_snmp_community secret.
 monitoring_snmp_targets:
+  - name: "ilo-hp1"
+    address: "10.0.124.164"
+    device_type: "hp-ilo"
   - name: "ilo-hp2"
     address: "10.0.124.165"
     device_type: "hp-ilo"
