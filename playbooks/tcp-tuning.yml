@@ -1,0 +1,6 @@
+---
+- name: Configure TCP tuning for Starlink/IPsec paths
+  hosts: telegraf_agents
+  become: true
+  roles:
+    - tcp_tuning
