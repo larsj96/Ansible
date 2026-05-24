@@ -1,0 +1,9 @@
+---
+syslog_forwarder_enabled: true
+syslog_forwarder_listen_udp: true
+syslog_forwarder_listen_tcp: true
+syslog_forwarder_port: 514
+syslog_forwarder_logstash_host: "10.0.0.38"
+syslog_forwarder_logstash_port: 5514
+syslog_forwarder_work_dir: "/var/spool/rsyslog"
+syslog_forwarder_remote_log_dir: "/var/log/remote"

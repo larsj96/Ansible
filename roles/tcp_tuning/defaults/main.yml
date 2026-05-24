@@ -1,0 +1,5 @@
+---
+tcp_tuning_enable_bbr: true
+tcp_tuning_default_qdisc: fq
+tcp_tuning_congestion_control: bbr
+tcp_tuning_sysctl_file: /etc/sysctl.d/90-homelab-tcp.conf

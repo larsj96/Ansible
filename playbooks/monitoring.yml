@@ -17,6 +17,12 @@
   roles:
     - telegraf_agent
 
+- name: Deploy syslog forwarders
+  hosts: syslog_forwarders
+  become: true
+  roles:
+    - syslog_forwarder
+
 - name: Deploy Filebeat log shippers
   hosts: log_shipper_agents
   become: true

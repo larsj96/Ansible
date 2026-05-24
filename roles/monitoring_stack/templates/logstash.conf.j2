@@ -18,18 +18,51 @@ filter {
   if [type] == "syslog" {
     grok {
       match => {
-        "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\\[%{POSINT:syslog_pid}\\])?: %{GREEDYDATA:syslog_message}"
+        "message" => [
+          "<%{POSINT:syslog_pri}>%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{GREEDYDATA:syslog_message}",
+          "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_hostname} %{DATA:syslog_program}(?:\\[%{POSINT:syslog_pid}\\])?: %{GREEDYDATA:syslog_message}",
+          "%{GREEDYDATA:syslog_message}"
+        ]
       }
     }
     syslog_pri { }
     date {
       match => [ "syslog_timestamp", "MMM  d HH:mm:ss", "MMM dd HH:mm:ss" ]
     }
+    mutate {
+      add_field => {
+        "homelab_pipeline" => "network-syslog"
+      }
+    }
+
+    if [syslog_hostname] =~ /^FGT/ or [syslog_message] =~ /CEF:0\|Fortinet\|Fortigate\|/ or [message] =~ /CEF:0\|Fortinet\|Fortigate\|/ or [syslog_message] =~ /(^| )devname=/ or [message] =~ /(^| )devname=/ {
+      mutate { add_tag => ["fortigate"] }
+      kv {
+        source => "syslog_message"
+        target => "fortigate"
+        field_split => " "
+        value_split => "="
+        trim_key => "\""
+        trim_value => "\""
+      }
+    } else if [syslog_hostname] =~ /^(pa|PA|palo|PALO)/ or [syslog_message] =~ /PAN-OS|TRAFFIC|THREAT|SYSTEM|GLOBALPROTECT|GlobalProtect|ike|IKE|ipsec|IPSec|IPSEC/ or [message] =~ /PAN-OS|TRAFFIC|THREAT|SYSTEM|GLOBALPROTECT|GlobalProtect|ike|IKE|ipsec|IPSec|IPSEC/ {
+      mutate { add_tag => ["paloalto"] }
+    }
   }
 }
 
 output {
-  if [type] == "syslog" {
+  if "fortigate" in [tags] {
+    opensearch {
+      hosts => ["http://opensearch:9200"]
+      index => "homelab-fortigate-%{+YYYY.MM.dd}"
+    }
+  } else if "paloalto" in [tags] {
+    opensearch {
+      hosts => ["http://opensearch:9200"]
+      index => "homelab-paloalto-%{+YYYY.MM.dd}"
+    }
+  } else if [type] == "syslog" {
     opensearch {
       hosts => ["http://opensearch:9200"]
       index => "homelab-syslog-%{+YYYY.MM.dd}"

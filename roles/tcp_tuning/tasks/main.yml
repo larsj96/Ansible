@@ -1,0 +1,43 @@
+---
+- name: Load BBR kernel module
+  ansible.builtin.command:
+    cmd: modprobe tcp_bbr
+  changed_when: false
+  when: tcp_tuning_enable_bbr | bool
+
+- name: Persist BBR kernel module
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/tcp_bbr.conf
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      tcp_bbr
+  when: tcp_tuning_enable_bbr | bool
+
+- name: Configure TCP sysctl tuning
+  ansible.builtin.copy:
+    dest: "{{ tcp_tuning_sysctl_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      net.core.default_qdisc={{ tcp_tuning_default_qdisc }}
+      net.ipv4.tcp_congestion_control={{ tcp_tuning_congestion_control }}
+  when: tcp_tuning_enable_bbr | bool
+
+- name: Apply TCP sysctl tuning
+  ansible.builtin.command:
+    cmd: "sysctl --load {{ tcp_tuning_sysctl_file }}"
+  changed_when: false
+  when: tcp_tuning_enable_bbr | bool
+
+- name: Show active TCP tuning
+  ansible.builtin.command:
+    cmd: sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
+  changed_when: false
+  register: tcp_tuning_active
+
+- name: Print active TCP tuning
+  ansible.builtin.debug:
+    var: tcp_tuning_active.stdout_lines

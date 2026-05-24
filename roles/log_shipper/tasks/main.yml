@@ -17,6 +17,26 @@
     mode: "1777"
   when: log_shipper_enabled | bool
 
+- name: Install Linux audit/logging packages
+  ansible.builtin.apt:
+    name:
+      - auditd
+      - audispd-plugins
+      - rsyslog
+    state: present
+    update_cache: true
+  when: log_shipper_enabled | bool
+
+- name: Ensure auditd and rsyslog are enabled
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+    enabled: true
+  loop:
+    - auditd
+    - rsyslog
+  when: log_shipper_enabled | bool
+
 - name: Download Filebeat package
   ansible.builtin.get_url:
     url: "{{ log_shipper_filebeat_url }}"
